@@ -54,7 +54,7 @@ screenshots are separate transcripts.
   "docker.io/library/nginx:1.27-alpine-doesnotexist": not found`. The registry was reached,
   but the tag or repository does not exist. (Other causes look different: `401 Unauthorized` /
   `pull access denied` for a private image without `imagePullSecrets`,
-  `429 Too Many Requests` for rate limiting, which hit me in Session 13, and
+  `429 Too Many Requests` for Docker Hub rate limiting, and
   `dial tcp ... i/o timeout` for network/DNS problems.)
 - **Fix:** real tag `nginx:1.27-alpine` and the official `redis:7-alpine`.
 
@@ -123,7 +123,7 @@ but [`broken-service.yaml`](05-service-connectivity/broken-service.yaml) has **t
 
 ![Fixed service: selector app=payments, targetPort 80, endpoints on port 80, the page loads and four requests return HTTP 200 OK](../../utility/screenshots/session-14/20_service_fixed.png)
 
-- **Verify:** `Endpoints: 10.244.0.78:80,10.244.0.79:80`, page loads, 4/4 `HTTP/1.1 200 OK`
+- **Verify:** `Endpoints: 10.244.0.58:80,10.244.0.59:80`, page loads, 4/4 `HTTP/1.1 200 OK`
   through the FQDN.
 - Lesson: fixing the first bug changed the symptom only a little (still `refused`). Re-check
   every layer after a fix.
@@ -142,8 +142,6 @@ but [`broken-service.yaml`](05-service-connectivity/broken-service.yaml) has **t
   **Pod's own** namespace.
 - `kubectl get svc -A` → the Service exists, but in `session14`.
 - CoreDNS is healthy: both Pods `Running`, and `kubernetes.default.svc.cluster.local` resolves.
-  (The two `plugin/ready: Plugins not ready` lines are old CoreDNS start-up messages from when
-  Docker Desktop was restarted earlier, not part of this problem.)
 - The fully-qualified name `inventory-svc.session14.svc.cluster.local` resolves.
 - **Root cause:** a short Service name only resolves inside its own namespace.
 - **Fix:** [`fixed-frontend-config.yaml`](06-dns/fixed-frontend-config.yaml) uses the FQDN.
@@ -172,7 +170,7 @@ but [`broken-service.yaml`](05-service-connectivity/broken-service.yaml) has **t
 
 ![Fixed: netstat shows 0.0.0.0:8000, the service and the pod IP return HTTP 200 from SimpleHTTP](../../utility/screenshots/session-14/24_podnet_fixed.png)
 
-- The first verification after the fix still got `refused`. The old Pods were still
+- Testing immediately after the fix can still get `refused` while the old Pods are
   `Terminating`: Python as PID 1 ignores SIGTERM, so each waited the full 30 s grace period,
   and kube-proxy can fall back to terminating endpoints. The recorded run waits for the old
   ReplicaSet's Pods to be gone (`kubectl wait --for=delete`) before testing.

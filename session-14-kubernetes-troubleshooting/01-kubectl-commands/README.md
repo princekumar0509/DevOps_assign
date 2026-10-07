@@ -65,7 +65,7 @@ the **Events** at the bottom.
 - `--since=10s --timestamps`, `--tail=N` and `-f` (follow) narrow the output. `--previous`
   shows the last *crashed* container (used in the CrashLoopBackOff case).
 - `kubectl exec <pod> -c <container> -- <cmd>` runs a command inside the container. The env
-  shows the Service variables Kubernetes injects (`SHOP_API_SERVICE_HOST=10.96.186.109`).
+  shows the Service variables Kubernetes injects (`SHOP_API_SERVICE_HOST=10.96.230.30`).
 - Containers in one Pod share a network namespace: `access-logger` reaches nginx on
   `localhost:80`.
 - From the client Pod, `shop-api.session14.svc.cluster.local` works through cluster DNS
@@ -83,4 +83,4 @@ the **Events** at the bottom.
 - `kubectl explain pod.spec.containers.livenessProbe` is the API reference offline;
   `--recursive` prints the whole field tree (`hpa.spec` → `behavior.scaleDown.policies...`).
 - `kubectl top` needs metrics-server. `--containers` splits per container, `--sort-by=memory`
-  finds the biggest consumers. Here `kube-apiserver` is the largest at 296Mi.
+  finds the biggest consumers. Here `kube-apiserver` is the largest at 262Mi.

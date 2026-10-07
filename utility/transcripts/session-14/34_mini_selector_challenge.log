@@ -12,11 +12,11 @@ service/troubleshooting-service configured
 
 $ kubectl get service troubleshooting-service -n challenge -o wide
 NAME                      TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE     SELECTOR
-troubleshooting-service   ClusterIP   10.96.102.140   <none>        80/TCP    3m17s   app=wrong-app
+troubleshooting-service   ClusterIP   10.96.102.140   <none>        80/TCP    7m43s   app=wrong-app
 
 $ kubectl get endpoints troubleshooting-service -n challenge 2>/dev/null
 NAME                      ENDPOINTS   AGE
-troubleshooting-service   <none>      3m17s
+troubleshooting-service   <none>      7m43s
 
 $ kubectl exec -n challenge project-broken-pod -- curl -s -m 3 http://troubleshooting-service; echo "curl exit code: $?"
 command terminated with exit code 7
@@ -25,8 +25,8 @@ curl exit code: 7
 $ kubectl get pods -n challenge --show-labels
 NAME                                   READY   STATUS    RESTARTS   AGE     LABELS
 project-broken-pod                     1/1     Running   0          1s      <none>
-troubleshooting-app-59d4957864-lnwdl   1/1     Running   0          3m17s   app=troubleshooting-app,pod-template-hash=59d4957864
-troubleshooting-app-59d4957864-rwhdc   1/1     Running   0          3m17s   app=troubleshooting-app,pod-template-hash=59d4957864
+troubleshooting-app-59d4957864-lnwdl   1/1     Running   0          7m43s   app=troubleshooting-app,pod-template-hash=59d4957864
+troubleshooting-app-59d4957864-rwhdc   1/1     Running   0          7m43s   app=troubleshooting-app,pod-template-hash=59d4957864
 
 $ kubectl describe service troubleshooting-service -n challenge | grep -E "Selector|Endpoints"
 Selector:                 app=wrong-app
@@ -37,7 +37,7 @@ service/troubleshooting-service configured
 
 $ kubectl get endpoints troubleshooting-service -n challenge 2>/dev/null
 NAME                      ENDPOINTS                       AGE
-troubleshooting-service   10.244.0.76:80,10.244.0.77:80   3m18s
+troubleshooting-service   10.244.0.76:80,10.244.0.77:80   7m44s
 
 $ kubectl exec -n challenge project-broken-pod -- curl -s -m 3 http://troubleshooting-service | grep "<title>"
 command terminated with exit code 7

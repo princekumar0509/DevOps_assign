@@ -1,66 +1,70 @@
-#CWD ~/Devops-Assignments/session-13-storage-hpa-probes/04-mini-project
+#CWD ~/Downloads/Devops-Assignments-main/session-13-storage-hpa-probes/04-mini-project
 $ kubectl patch deployment web-app -n production-webapp --type=json -p="[{\"op\":\"replace\",\"path\":\"/spec/template/spec/containers/0/livenessProbe/httpGet/path\",\"value\":\"/crash\"}]"
 deployment.apps/web-app patched
 
 $ timeout 75 kubectl get pods -n production-webapp -l app=web-app --watch
 NAME                      READY   STATUS        RESTARTS   AGE
-web-app-d45775485-6p894   1/1     Terminating   0          9s
-web-app-d45775485-jnrm6   1/1     Terminating   0          9s
-web-app-d45775485-6p894   0/1     Completed     0          9s
-web-app-d45775485-jnrm6   0/1     Completed     0          9s
-web-app-85d86b65d-qkkgh   0/1     Pending       0          0s
-web-app-85d86b65d-qkkgh   0/1     Pending       0          0s
-web-app-85d86b65d-xdp5z   0/1     Pending       0          0s
-web-app-85d86b65d-xdp5z   0/1     Pending       0          0s
-web-app-85d86b65d-qkkgh   0/1     ContainerCreating   0          0s
-web-app-85d86b65d-xdp5z   0/1     ContainerCreating   0          0s
-web-app-d45775485-jnrm6   0/1     Completed           0          9s
-web-app-d45775485-jnrm6   0/1     Completed           0          9s
-web-app-d45775485-6p894   0/1     Completed           0          9s
-web-app-d45775485-6p894   0/1     Completed           0          9s
-web-app-85d86b65d-qkkgh   0/1     ContainerCreating   0          0s
-web-app-85d86b65d-xdp5z   0/1     ContainerCreating   0          0s
-web-app-85d86b65d-qkkgh   0/1     Running             0          1s
-web-app-85d86b65d-xdp5z   0/1     Running             0          1s
-web-app-85d86b65d-qkkgh   0/1     Running             0          2s
-web-app-85d86b65d-qkkgh   0/1     Running             0          2s
-web-app-85d86b65d-xdp5z   0/1     Running             0          2s
-web-app-85d86b65d-qkkgh   1/1     Running             0          9s
-web-app-85d86b65d-xdp5z   1/1     Running             0          9s
-web-app-85d86b65d-qkkgh   0/1     Running             1 (0s ago)   20s
-web-app-85d86b65d-xdp5z   0/1     Running             1 (0s ago)   20s
-web-app-85d86b65d-qkkgh   0/1     Running             1 (2s ago)   22s
-web-app-85d86b65d-xdp5z   0/1     Running             1 (2s ago)   22s
-web-app-85d86b65d-qkkgh   0/1     Running             1 (4s ago)   24s
-web-app-85d86b65d-xdp5z   0/1     Running             1 (4s ago)   24s
-web-app-85d86b65d-qkkgh   1/1     Running             1 (9s ago)   29s
-web-app-85d86b65d-xdp5z   1/1     Running             1 (9s ago)   29s
-web-app-85d86b65d-xdp5z   0/1     Running             2 (0s ago)   35s
-web-app-85d86b65d-qkkgh   0/1     Running             2 (0s ago)   35s
-web-app-85d86b65d-qkkgh   0/1     Running             2 (1s ago)   36s
-web-app-85d86b65d-xdp5z   0/1     Running             2 (1s ago)   36s
-web-app-85d86b65d-qkkgh   0/1     Running             2 (3s ago)   38s
-web-app-85d86b65d-xdp5z   0/1     Running             2 (3s ago)   38s
-web-app-85d86b65d-qkkgh   1/1     Running             2 (8s ago)   43s
-web-app-85d86b65d-xdp5z   1/1     Running             2 (8s ago)   43s
-web-app-85d86b65d-qkkgh   0/1     Running             3 (0s ago)   50s
-web-app-85d86b65d-xdp5z   0/1     Running             3 (0s ago)   50s
-web-app-85d86b65d-qkkgh   0/1     Running             3 (2s ago)   52s
-web-app-85d86b65d-xdp5z   0/1     Running             3 (2s ago)   52s
-web-app-85d86b65d-qkkgh   0/1     Running             3 (4s ago)   54s
-web-app-85d86b65d-xdp5z   0/1     Running             3 (4s ago)   54s
-web-app-85d86b65d-qkkgh   1/1     Running             3 (9s ago)   59s
-web-app-85d86b65d-xdp5z   1/1     Running             3 (9s ago)   59s
-web-app-85d86b65d-qkkgh   0/1     CrashLoopBackOff    3 (0s ago)   65s
-web-app-85d86b65d-xdp5z   0/1     CrashLoopBackOff    3 (1s ago)   66s
+web-app-d45775485-6hfj6   1/1     Terminating   0          9s
+web-app-d45775485-7gn7w   1/1     Terminating   0          9s
+web-app-d45775485-7gn7w   0/1     Completed     0          10s
+web-app-d45775485-6hfj6   0/1     Completed     0          10s
+web-app-85d86b65d-q5ffl   0/1     Pending       0          0s
+web-app-85d86b65d-q5ffl   0/1     Pending       0          0s
+web-app-85d86b65d-hmq77   0/1     Pending       0          0s
+web-app-85d86b65d-hmq77   0/1     Pending       0          0s
+web-app-85d86b65d-q5ffl   0/1     ContainerCreating   0          0s
+web-app-85d86b65d-hmq77   0/1     ContainerCreating   0          0s
+web-app-d45775485-6hfj6   0/1     Completed           0          10s
+web-app-d45775485-6hfj6   0/1     Completed           0          10s
+web-app-d45775485-7gn7w   0/1     Completed           0          10s
+web-app-d45775485-7gn7w   0/1     Completed           0          10s
+web-app-85d86b65d-q5ffl   0/1     ContainerCreating   0          0s
+web-app-85d86b65d-hmq77   0/1     ContainerCreating   0          0s
+web-app-85d86b65d-q5ffl   0/1     Running             0          1s
+web-app-85d86b65d-hmq77   0/1     Running             0          1s
+web-app-85d86b65d-q5ffl   0/1     Running             0          2s
+web-app-85d86b65d-q5ffl   0/1     Running             0          2s
+web-app-85d86b65d-hmq77   0/1     Running             0          2s
+web-app-85d86b65d-q5ffl   1/1     Running             0          9s
+web-app-85d86b65d-hmq77   1/1     Running             0          9s
+web-app-85d86b65d-q5ffl   0/1     Running             1 (0s ago)   20s
+web-app-85d86b65d-hmq77   0/1     Running             1 (0s ago)   20s
+web-app-85d86b65d-q5ffl   0/1     Running             1 (2s ago)   22s
+web-app-85d86b65d-hmq77   0/1     Running             1 (2s ago)   22s
+web-app-85d86b65d-q5ffl   0/1     Running             1 (4s ago)   24s
+web-app-85d86b65d-hmq77   0/1     Running             1 (4s ago)   24s
+web-app-85d86b65d-q5ffl   1/1     Running             1 (9s ago)   29s
+web-app-85d86b65d-hmq77   1/1     Running             1 (9s ago)   29s
+web-app-85d86b65d-hmq77   0/1     Running             2 (0s ago)   35s
+web-app-85d86b65d-q5ffl   0/1     Running             2 (0s ago)   35s
+web-app-85d86b65d-q5ffl   0/1     Running             2 (1s ago)   36s
+web-app-85d86b65d-hmq77   0/1     Running             2 (1s ago)   36s
+web-app-85d86b65d-q5ffl   0/1     Running             2 (3s ago)   38s
+web-app-85d86b65d-hmq77   0/1     Running             2 (3s ago)   38s
+web-app-85d86b65d-q5ffl   1/1     Running             2 (8s ago)   43s
+web-app-85d86b65d-hmq77   1/1     Running             2 (8s ago)   43s
+web-app-85d86b65d-hmq77   0/1     Running             3 (0s ago)   50s
+web-app-85d86b65d-q5ffl   0/1     Running             3 (1s ago)   51s
+web-app-85d86b65d-q5ffl   0/1     Running             3 (2s ago)   52s
+web-app-85d86b65d-hmq77   0/1     Running             3 (2s ago)   52s
+web-app-85d86b65d-q5ffl   0/1     Running             3 (4s ago)   54s
+web-app-85d86b65d-hmq77   0/1     Running             3 (4s ago)   54s
+web-app-85d86b65d-q5ffl   1/1     Running             3 (9s ago)   59s
+web-app-85d86b65d-hmq77   1/1     Running             3 (9s ago)   59s
+web-app-85d86b65d-hmq77   0/1     CrashLoopBackOff    3 (0s ago)   65s
+web-app-85d86b65d-q5ffl   0/1     Running             4 (0s ago)   70s
+web-app-85d86b65d-q5ffl   0/1     Running             4 (2s ago)   72s
+web-app-85d86b65d-q5ffl   0/1     Running             4 (4s ago)   74s
 
 $ kubectl get events -n production-webapp --sort-by=.lastTimestamp | grep -E "Liveness|failed liveness" | tail -3
-10s         Warning   Unhealthy                      pod/web-app-85d86b65d-qkkgh           Liveness probe failed: HTTP probe failed with statuscode: 404
-10s         Warning   Unhealthy                      pod/web-app-85d86b65d-xdp5z           Liveness probe failed: HTTP probe failed with statuscode: 404
-10s         Normal    Killing                        pod/web-app-85d86b65d-xdp5z           Container nginx failed liveness probe, will be restarted
+9s          Warning   Unhealthy                      pod/web-app-85d86b65d-hmq77           Liveness probe failed: HTTP probe failed with statuscode: 404
+4s          Normal    Killing                        pod/web-app-85d86b65d-q5ffl           Container nginx failed liveness probe, will be restarted
+4s          Warning   Unhealthy                      pod/web-app-85d86b65d-q5ffl           Liveness probe failed: HTTP probe failed with statuscode: 404
 
 $ kubectl apply -f deployment.yaml && kubectl rollout status deployment/web-app -n production-webapp --timeout=120s
 deployment.apps/web-app configured
+Waiting for deployment "web-app" rollout to finish: 0 out of 2 new replicas have been updated...
+Waiting for deployment "web-app" rollout to finish: 0 out of 2 new replicas have been updated...
 Waiting for deployment "web-app" rollout to finish: 0 out of 2 new replicas have been updated...
 Waiting for deployment "web-app" rollout to finish: 0 out of 2 new replicas have been updated...
 Waiting for deployment "web-app" rollout to finish: 0 out of 2 new replicas have been updated...
@@ -70,9 +74,9 @@ deployment "web-app" successfully rolled out
 
 $ kubectl get pods -n production-webapp -l app=web-app
 NAME                      READY   STATUS    RESTARTS   AGE
-web-app-d45775485-cv57f   1/1     Running   0          10s
-web-app-d45775485-mhjxd   1/1     Running   0          10s
+web-app-d45775485-wbbgr   1/1     Running   0          8s
+web-app-d45775485-wn74w   1/1     Running   0          8s
 
 $ kubectl exec -n production-webapp deploy/web-app -- cat /data/student.txt
-Student: Ratnesh Vaibhav (24bcs10413)
+Student: Prince Kumar (24bcs10658)
 

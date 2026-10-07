@@ -2,3 +2,36 @@
 $ kubectl apply -f broken-pod.yaml
 pod/project-broken-pod created
 
+$ kubectl get pod project-broken-pod -n challenge
+NAME                 READY   STATUS             RESTARTS   AGE
+project-broken-pod   0/1     ImagePullBackOff   0          21s
+
+$ kubectl describe pod project-broken-pod -n challenge | sed -n "/^Containers:/,/^    Ready:/p"
+Containers:
+  app:
+    Container ID:   
+    Image:          nginx:this-tag-does-not-exist
+    Image ID:       
+    Port:           <none>
+    Host Port:      <none>
+    State:          Waiting
+      Reason:       ImagePullBackOff
+    Ready:          False
+
+$ kubectl describe pod project-broken-pod -n challenge | sed -n "/^Events:/,\$p"
+Events:
+  Type     Reason     Age               From               Message
+  ----     ------     ----              ----               -------
+  Normal   Scheduled  21s               default-scheduler  Successfully assigned challenge/project-broken-pod to devops-lab-control-plane
+  Warning  Failed     16s               kubelet            spec.containers{app}: Failed to pull image "nginx:this-tag-does-not-exist": rpc error: code = NotFound desc = failed to pull and unpack image "docker.io/library/nginx:this-tag-does-not-exist": failed to resolve reference "docker.io/library/nginx:this-tag-does-not-exist": docker.io/library/nginx:this-tag-does-not-exist: not found
+  Warning  Failed     16s               kubelet            spec.containers{app}: Error: ErrImagePull
+  Normal   BackOff    15s               kubelet            spec.containers{app}: Back-off pulling image "nginx:this-tag-does-not-exist"
+  Warning  Failed     15s               kubelet            spec.containers{app}: Error: ImagePullBackOff
+  Normal   Pulling    2s (x2 over 21s)  kubelet            spec.containers{app}: Pulling image "nginx:this-tag-does-not-exist"
+
+$ kubectl events -n challenge --for pod/project-broken-pod --types=Warning
+LAST SEEN   TYPE      REASON   OBJECT                   MESSAGE
+16s         Warning   Failed   Pod/project-broken-pod   Failed to pull image "nginx:this-tag-does-not-exist": rpc error: code = NotFound desc = failed to pull and unpack image "docker.io/library/nginx:this-tag-does-not-exist": failed to resolve reference "docker.io/library/nginx:this-tag-does-not-exist": docker.io/library/nginx:this-tag-does-not-exist: not found
+16s         Warning   Failed   Pod/project-broken-pod   Error: ErrImagePull
+15s         Warning   Failed   Pod/project-broken-pod   Error: ImagePullBackOff
+

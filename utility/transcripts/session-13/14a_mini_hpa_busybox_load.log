@@ -1,26 +1,26 @@
-#CWD ~/Devops-Assignments/session-13-storage-hpa-probes/04-mini-project
+#CWD ~/Downloads/Devops-Assignments-main/session-13-storage-hpa-probes/04-mini-project
 $ kubectl get hpa -n production-webapp
 NAME          REFERENCE            TARGETS       MINPODS   MAXPODS   REPLICAS   AGE
-web-app-hpa   Deployment/web-app   cpu: 1%/50%   2         5         2          12m
+web-app-hpa   Deployment/web-app   cpu: 1%/50%   2         5         2          34s
 
 $ kubectl run load-generator -n production-webapp --image=busybox:1.36 --restart=Never -- /bin/sh -c "while true; do wget -q -O- http://web-service > /dev/null; done"
 pod/load-generator created
 
 $ timeout 105 kubectl get hpa -n production-webapp --watch
 NAME          REFERENCE            TARGETS       MINPODS   MAXPODS   REPLICAS   AGE
-web-app-hpa   Deployment/web-app   cpu: 1%/50%   2         5         2          12m
-web-app-hpa   Deployment/web-app   cpu: 3%/50%   2         5         2          12m
-web-app-hpa   Deployment/web-app   cpu: 41%/50%   2         5         2          13m
-web-app-hpa   Deployment/web-app   cpu: 31%/50%   2         5         2          13m
-web-app-hpa   Deployment/web-app   cpu: 21%/50%   2         5         2          13m
-web-app-hpa   Deployment/web-app   cpu: 25%/50%   2         5         2          13m
-web-app-hpa   Deployment/web-app   cpu: 43%/50%   2         5         2          14m
+web-app-hpa   Deployment/web-app   cpu: 1%/50%   2         5         2          34s
+web-app-hpa   Deployment/web-app   cpu: 28%/50%   2         5         2          60s
+web-app-hpa   Deployment/web-app   cpu: 47%/50%   2         5         2          75s
+web-app-hpa   Deployment/web-app   cpu: 45%/50%   2         5         2          90s
+web-app-hpa   Deployment/web-app   cpu: 35%/50%   2         5         2          105s
+web-app-hpa   Deployment/web-app   cpu: 34%/50%   2         5         2          2m
+web-app-hpa   Deployment/web-app   cpu: 45%/50%   2         5         2          2m15s
 
 $ kubectl top pods -n production-webapp
 NAME                      CPU(cores)   MEMORY(bytes)   
-load-generator            913m         7Mi             
-web-app-d45775485-6v2ss   36m          11Mi            
-web-app-d45775485-qnlh8   31m          15Mi            
+load-generator            833m         6Mi             
+web-app-d45775485-kgjcg   45m          13Mi            
+web-app-d45775485-zr682   46m          13Mi            
 
 $ kubectl delete pod load-generator -n production-webapp
 pod "load-generator" deleted from production-webapp namespace

@@ -1,24 +1,4 @@
-#CWD ~/Devops-Assignments/session-13-storage-hpa-probes
+#CWD ~/Downloads/Devops-Assignments-main/session-13-storage-hpa-probes
 $ kubectl delete namespace session13 production-webapp
 namespace "session13" deleted
 namespace "production-webapp" deleted
-
-$ kubectl get pv
-NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS     CLAIM                     STORAGECLASS   VOLUMEATTRIBUTESCLASS   REASON   AGE
-pvc-51f1f3a9-153a-4cbf-adc2-2ffefccf51a5   256Mi      RWO            Retain           Released   session13/dynamic-claim   local-retain   <unset>                          67m
-static-pv-1gi                              1Gi        RWO            Retain           Released   session13/static-claim    manual         <unset>                          68m
-
-$ kubectl delete pv --all
-persistentvolume "pvc-51f1f3a9-153a-4cbf-adc2-2ffefccf51a5" deleted
-persistentvolume "static-pv-1gi" deleted
-
-$ kubectl delete storageclass local-retain
-storageclass.storage.k8s.io "local-retain" deleted
-
-$ kubectl get pv,storageclass
-NAME                                             PROVISIONER             RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
-storageclass.storage.k8s.io/standard (default)   rancher.io/local-path   Delete          WaitForFirstConsumer   false                  74m
-
-$ docker exec devops-lab-control-plane ls /var/local-path-provisioner/
-pvc-51f1f3a9-153a-4cbf-adc2-2ffefccf51a5_session13_dynamic-claim
-

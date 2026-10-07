@@ -15,6 +15,6 @@ pod/project-broken-pod condition met
 $ kubectl get pods -n challenge
 NAME                                   READY   STATUS    RESTARTS   AGE
 project-broken-pod                     1/1     Running   0          1s
-troubleshooting-app-59d4957864-lnwdl   1/1     Running   0          3m17s
-troubleshooting-app-59d4957864-rwhdc   1/1     Running   0          3m17s
+troubleshooting-app-59d4957864-lnwdl   1/1     Running   0          7m43s
+troubleshooting-app-59d4957864-rwhdc   1/1     Running   0          7m43s
 

@@ -15,3 +15,25 @@ startup-demo        0/1     Running             0          35s
 startup-demo        1/1     Running             0          35s
 startup-too-short   0/1     Running             1 (0s ago)   45s
 startup-too-short   0/1     Running             2 (0s ago)   90s
+
+$ kubectl get pods -n session13 -l demo=startup-probe
+NAME                READY   STATUS    RESTARTS      AGE
+startup-demo        1/1     Running   0             100s
+startup-too-short   0/1     Running   2 (10s ago)   100s
+
+$ UID_OK=$(kubectl get pod startup-demo -n session13 -o jsonpath={.metadata.uid}); kubectl get events -n session13 --field-selector involvedObject.uid=$UID_OK --sort-by=.lastTimestamp | grep -E "LAST|Unhealthy|Started|Killing"
+LAST SEEN   TYPE      REASON      OBJECT             MESSAGE
+100s        Normal    Started     pod/startup-demo   Container started
+70s         Warning   Unhealthy   pod/startup-demo   Startup probe failed: Get "http://10.244.0.110:80/": dial tcp 10.244.0.110:80: connect: connection refused
+
+$ UID_BAD=$(kubectl get pod startup-too-short -n session13 -o jsonpath={.metadata.uid}); kubectl get events -n session13 --field-selector involvedObject.uid=$UID_BAD --sort-by=.lastTimestamp | grep -E "LAST|Unhealthy|Started|Killing"
+LAST SEEN   TYPE      REASON      OBJECT                  MESSAGE
+40s         Normal    Killing     pod/startup-too-short   Container slow-app failed startup probe, will be restarted
+10s         Normal    Started     pod/startup-too-short   Container started
+5s          Warning   Unhealthy   pod/startup-too-short   Startup probe failed: Get "http://10.244.0.111:80/": dial tcp 10.244.0.111:80: connect: connection refused
+
+$ kubectl logs startup-demo -n session13 | head -3
+warming up for 30s
+2026/10/07 18:12:44 [notice] 1#1: using the "epoll" event method
+2026/10/07 18:12:44 [notice] 1#1: nginx/1.27.5
+

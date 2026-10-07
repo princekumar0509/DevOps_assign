@@ -1,31 +1,31 @@
-#CWD ~/Devops-Assignments/session-13-storage-hpa-probes/04-mini-project
+#CWD ~/Downloads/Devops-Assignments-main/session-13-storage-hpa-probes/04-mini-project
 $ kubectl get pod load-generator-ab -n production-webapp
 NAME                READY   STATUS      RESTARTS   AGE
-load-generator-ab   0/1     Completed   0          17m
+load-generator-ab   0/1     Completed   0          10m
 
 $ kubectl logs load-generator-ab -n production-webapp | grep -E "Concurrency Level|Time taken|Complete requests|Failed requests|Requests per second"
 Concurrency Level:      50
-Time taken for tests:   240.000 seconds
-Complete requests:      2399374
+Time taken for tests:   240.013 seconds
+Complete requests:      1859102
 Failed requests:        0
-Requests per second:    9997.39 [#/sec] (mean)
+Requests per second:    7745.85 [#/sec] (mean)
 
 $ kubectl get hpa -n production-webapp
 NAME          REFERENCE            TARGETS       MINPODS   MAXPODS   REPLICAS   AGE
-web-app-hpa   Deployment/web-app   cpu: 1%/50%   2         5         2          31m
+web-app-hpa   Deployment/web-app   cpu: 1%/50%   2         5         2          13m
 
 $ kubectl get pods -n production-webapp -l app=web-app
 NAME                      READY   STATUS    RESTARTS   AGE
-web-app-d45775485-6v2ss   1/1     Running   0          31m
-web-app-d45775485-qnlh8   1/1     Running   0          32m
+web-app-d45775485-kgjcg   1/1     Running   0          13m
+web-app-d45775485-zr682   1/1     Running   0          13m
 
 $ kubectl describe hpa web-app-hpa -n production-webapp | sed -n "/^Events:/,\$p" | grep -v -E "FailedGet|FailedCompute"
 Events:
   Type     Reason                        Age    From                       Message
   ----     ------                        ----   ----                       -------
-  Normal   SuccessfulRescale             16m    horizontal-pod-autoscaler  New size: 4; reason: cpu resource utilization (percentage of request) above target
-  Normal   SuccessfulRescale             16m    horizontal-pod-autoscaler  New size: 5; reason: cpu resource utilization (percentage of request) above target
-  Normal   SuccessfulRescale             7m40s  horizontal-pod-autoscaler  New size: 2; reason: All metrics below target
+  Normal   SuccessfulRescale             9m26s  horizontal-pod-autoscaler  New size: 4; reason: cpu resource utilization (percentage of request) above target
+  Normal   SuccessfulRescale             9m11s  horizontal-pod-autoscaler  New size: 5; reason: cpu resource utilization (percentage of request) above target
+  Normal   SuccessfulRescale             40s    horizontal-pod-autoscaler  New size: 2; reason: All metrics below target
 
 $ kubectl delete pod load-generator-ab -n production-webapp
 pod "load-generator-ab" deleted from production-webapp namespace
