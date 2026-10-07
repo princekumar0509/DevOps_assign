@@ -1,0 +1,27 @@
+# A slow-booting app (30s before nginx listens) with an aggressive liveness
+# probe. The startup probe holds liveness off until the app is up:
+# budget = failureThreshold x periodSeconds = 12 x 5s = 60s.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: startup-demo
+  namespace: session13
+  labels:
+    demo: startup-probe
+spec:
+  containers:
+    - name: slow-app
+      image: nginx:1.27-alpine
+      command: ["sh", "-c", "echo 'warming up for 30s'; sleep 30; exec nginx -g 'daemon off;'"]
+      startupProbe:
+        httpGet:
+          path: /
+          port: 80
+        periodSeconds: 5
+        failureThreshold: 12
+      livenessProbe:
+        httpGet:
+          path: /
+          port: 80
+        periodSeconds: 5
+        failureThreshold: 1

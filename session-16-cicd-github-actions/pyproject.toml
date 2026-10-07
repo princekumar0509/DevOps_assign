@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cgpa-calculator"
+version = "1.0.0"
+description = "CGPA calculator API - Session 16 CI/CD demo"
+requires-python = ">=3.11"
+dependencies = ["Flask>=3.1"]
+
+[tool.setuptools]
+packages = ["app"]

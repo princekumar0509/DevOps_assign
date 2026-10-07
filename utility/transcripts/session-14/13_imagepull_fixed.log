@@ -1,0 +1,33 @@
+#CWD ~/Downloads/Devops-Assignments-main/session-14-kubernetes-troubleshooting/02-common-issues/02-imagepullbackoff
+$ diff broken.yaml fixed.yaml
+1d0
+< # BUG 1: the tag does not exist.  BUG 2: the repository name is misspelt.
+12c11
+<       image: nginx:1.27-alpine-doesnotexist
+---
+>       image: nginx:1.27-alpine        # FIX: a tag that exists
+24c23
+<       image: princekumar/redis-typo:7
+---
+>       image: redis:7-alpine           # FIX: the real official repository
+
+$ kubectl delete -f broken.yaml
+pod "catalog-web" deleted from session14 namespace
+pod "catalog-cache" deleted from session14 namespace
+
+$ kubectl apply -f fixed.yaml
+pod/catalog-web created
+pod/catalog-cache created
+
+$ kubectl wait --for=condition=Ready pod -l issue=image-pull -n session14 --timeout=120s
+pod/catalog-cache condition met
+pod/catalog-web condition met
+
+$ kubectl get pods -n session14 -l issue=image-pull -o wide
+NAME            READY   STATUS    RESTARTS   AGE   IP            NODE                       NOMINATED NODE   READINESS GATES
+catalog-cache   1/1     Running   0          9s    10.244.0.52   devops-lab-control-plane   <none>           <none>
+catalog-web     1/1     Running   0          9s    10.244.0.51   devops-lab-control-plane   <none>           <none>
+
+$ kubectl exec -n session14 catalog-cache -- redis-cli ping
+PONG
+

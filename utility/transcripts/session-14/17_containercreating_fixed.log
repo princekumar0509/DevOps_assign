@@ -1,0 +1,26 @@
+#CWD ~/Downloads/Devops-Assignments-main/session-14-kubernetes-troubleshooting/02-common-issues/04-containercreating
+$ kubectl get pod pricing-api -n session14
+NAME          READY   STATUS              RESTARTS   AGE
+pricing-api   0/1     ContainerCreating   0          25s
+
+$ kubectl apply -f fix-configmap.yaml
+configmap/pricing-settings created
+
+$ kubectl wait --for=condition=Ready pod/pricing-api -n session14 --timeout=150s
+pod/pricing-api condition met
+
+$ kubectl get pod pricing-api -n session14
+NAME          READY   STATUS    RESTARTS   AGE
+pricing-api   1/1     Running   0          32s
+
+$ kubectl exec -n session14 pricing-api -- sh -c "ls /etc/pricing && cat /etc/pricing/currency; echo; cat /etc/pricing/tax-rate; echo"
+currency
+tax-rate
+INR
+0.18
+
+$ kubectl describe pod pricing-api -n session14 | sed -n "/^Events:/,\$p" | grep -E "Type|FailedMount|Started"
+  Type     Reason       Age                From               Message
+  Warning  FailedMount  17s (x6 over 32s)  kubelet            MountVolume.SetUp failed for volume "settings" : configmap "pricing-settings" not found
+  Normal   Started      0s                 kubelet            spec.containers{api}: Container started
+

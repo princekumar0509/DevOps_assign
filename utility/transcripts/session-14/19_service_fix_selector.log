@@ -1,0 +1,23 @@
+#CWD ~/Downloads/Devops-Assignments-main/session-14-kubernetes-troubleshooting/02-common-issues/05-service-connectivity
+$ kubectl patch svc payments-svc -n session14 -p "{\"spec\":{\"selector\":{\"app\":\"payments\"}}}"
+service/payments-svc patched
+
+$ kubectl get endpointslice -n session14 -l kubernetes.io/service-name=payments-svc
+NAME                 ADDRESSTYPE   PORTS   ENDPOINTS                 AGE
+payments-svc-v9kjw   IPv4          8080    10.244.0.58,10.244.0.59   4m10s
+
+$ kubectl exec -n session14 client -- wget -qO- -T 3 http://payments-svc
+wget: can't connect to remote host (10.96.233.24): Connection refused
+command terminated with exit code 1
+
+$ POD_IP=$(kubectl get pod -n session14 -l app=payments -o jsonpath="{.items[0].status.podIP}"); kubectl exec -n session14 client -- wget -qO- -T 3 http://$POD_IP:8080 2>&1; kubectl exec -n session14 client -- wget -qO- -T 3 http://$POD_IP:80 | grep -o "<title>.*</title>"
+wget: can't connect to remote host (10.244.0.58): Connection refused
+command terminated with exit code 1
+<title>Welcome to nginx!</title>
+
+$ kubectl exec -n session14 deploy/payments -- netstat -tln
+Active Internet connections (only servers)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State       
+tcp        0      0 0.0.0.0:80              0.0.0.0:*               LISTEN      
+tcp        0      0 :::80                   :::*                    LISTEN      
+

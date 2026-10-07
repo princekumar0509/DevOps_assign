@@ -1,0 +1,59 @@
+#CWD ~/Downloads/Devops-Assignments-main/session-14-kubernetes-troubleshooting/02-common-issues/06-dns
+$ kubectl apply -f broken-frontend.yaml
+namespace/storefront created
+configmap/frontend-config created
+pod/frontend created
+
+$ kubectl wait --for=condition=Ready pod/frontend -n storefront --timeout=90s
+pod/frontend condition met
+
+$ kubectl logs frontend -n storefront --tail=3
+wget: bad address 'inventory-svc'
+18:03:37 inventory UNREACHABLE (http://inventory-svc)
+
+$ kubectl exec -n storefront frontend -- nslookup inventory-svc
+Server:		10.96.0.10
+Address:	10.96.0.10:53
+
+** server can't find inventory-svc.cluster.local: NXDOMAIN
+
+** server can't find inventory-svc.storefront.svc.cluster.local: NXDOMAIN
+
+** server can't find inventory-svc.svc.cluster.local: NXDOMAIN
+
+** server can't find inventory-svc.storefront.svc.cluster.local: NXDOMAIN
+
+** server can't find inventory-svc.svc.cluster.local: NXDOMAIN
+
+** server can't find inventory-svc.cluster.local: NXDOMAIN
+
+command terminated with exit code 1
+
+$ kubectl exec -n storefront frontend -- cat /etc/resolv.conf
+search storefront.svc.cluster.local svc.cluster.local cluster.local
+nameserver 10.96.0.10
+options ndots:5
+
+$ kubectl get svc -A | grep -E "NAMESPACE|inventory"
+NAMESPACE       NAME                                 TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)                      AGE
+session14       inventory-svc                        ClusterIP      10.96.184.153   <none>        80/TCP                       3m14s
+
+$ kubectl get pods -n kube-system -l k8s-app=kube-dns
+NAME                       READY   STATUS    RESTARTS   AGE
+coredns-559f6c778d-jblnt   1/1     Running   0          6m
+coredns-559f6c778d-mpjbk   1/1     Running   0          6m
+
+$ kubectl logs -n kube-system -l k8s-app=kube-dns --tail=2 --prefix
+[pod/coredns-559f6c778d-jblnt/coredns] CoreDNS-1.14.6
+[pod/coredns-559f6c778d-jblnt/coredns] linux/amd64, go1.26.5, 424d125
+[pod/coredns-559f6c778d-mpjbk/coredns] CoreDNS-1.14.6
+[pod/coredns-559f6c778d-mpjbk/coredns] linux/amd64, go1.26.5, 424d125
+
+$ kubectl exec -n storefront frontend -- nslookup kubernetes.default.svc.cluster.local | tail -2
+Address: 10.96.0.1
+
+
+$ kubectl exec -n storefront frontend -- nslookup inventory-svc.session14.svc.cluster.local | tail -2
+Address: 10.96.184.153
+
+

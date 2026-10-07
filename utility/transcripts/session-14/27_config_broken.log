@@ -1,0 +1,24 @@
+#CWD ~/Downloads/Devops-Assignments-main/session-14-kubernetes-troubleshooting/02-common-issues/08-configuration
+$ kubectl apply -f broken.yaml
+configmap/billing-config unchanged
+pod/billing created
+
+$ kubectl get pod billing -n session14
+NAME      READY   STATUS                       RESTARTS   AGE
+billing   0/1     CreateContainerConfigError   0          8s
+
+$ kubectl describe pod billing -n session14 | sed -n "/^Events:/,\$p" | grep -E "Type|Warning"
+  Type     Reason     Age              From               Message
+  Warning  Failed     8s (x2 over 8s)  kubelet            spec.containers{app}: Error: couldn't find key LOG_LVL in ConfigMap session14/billing-config
+
+$ kubectl get configmap billing-config -n session14 -o jsonpath="{.data}{\"\n\"}"
+{"CURRENCY":"INR","LOG_LEVEL":"info"}
+
+$ kubectl get pod billing -n session14 -o jsonpath="{range .spec.containers[0].env[*]}{.name} <- {.valueFrom}{\"\n\"}{end}"
+LOG_LEVEL <- {"configMapKeyRef":{"key":"LOG_LVL","name":"billing-config"}}
+CURRENCY <- {"configMapKeyRef":{"key":"CURRENCY","name":"billing-config"}}
+DB_USER <- {"secretKeyRef":{"key":"username","name":"db-credentials"}}
+
+$ kubectl get secret db-credentials -n session14
+Error from server (NotFound): secrets "db-credentials" not found
+

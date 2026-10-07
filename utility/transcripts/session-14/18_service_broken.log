@@ -1,0 +1,33 @@
+#CWD ~/Downloads/Devops-Assignments-main/session-14-kubernetes-troubleshooting/02-common-issues/05-service-connectivity
+$ kubectl apply -f app.yaml -f broken-service.yaml
+deployment.apps/payments unchanged
+service/payments-svc configured
+
+$ kubectl rollout status deployment/payments -n session14 --timeout=90s
+deployment "payments" successfully rolled out
+
+$ kubectl exec -n session14 client -- wget -qO- -T 3 http://payments-svc
+wget: can't connect to remote host (10.96.233.24): Connection refused
+command terminated with exit code 1
+
+$ kubectl get svc payments-svc -n session14 -o wide
+NAME           TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)   AGE    SELECTOR
+payments-svc   ClusterIP   10.96.233.24   <none>        80/TCP    4m9s   app=payment
+
+$ kubectl get endpointslice -n session14 -l kubernetes.io/service-name=payments-svc
+NAME                 ADDRESSTYPE   PORTS     ENDPOINTS   AGE
+payments-svc-v9kjw   IPv4          <unset>   <unset>     4m10s
+
+$ kubectl get pods -n session14 -l app=payments --show-labels
+NAME                        READY   STATUS    RESTARTS   AGE     LABELS
+payments-658bc9d46d-jsntq   1/1     Running   0          4m10s   app=payments,pod-template-hash=658bc9d46d
+payments-658bc9d46d-t4gd9   1/1     Running   0          4m10s   app=payments,pod-template-hash=658bc9d46d
+
+$ kubectl get pods -n session14 -l app=payment
+No resources found in session14 namespace.
+
+$ kubectl describe svc payments-svc -n session14 | grep -E "Selector|TargetPort|Endpoints"
+Selector:                 app=payment
+TargetPort:               8080/TCP
+Endpoints:                
+

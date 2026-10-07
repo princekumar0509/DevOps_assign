@@ -1,0 +1,8 @@
+# FIX: use the namespace-qualified service name (the full FQDN is clearest).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-config
+  namespace: storefront
+data:
+  INVENTORY_URL: http://inventory-svc.session14.svc.cluster.local

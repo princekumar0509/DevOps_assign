@@ -1,0 +1,71 @@
+#CWD ~/Downloads/Devops-Assignments-main/session-14-kubernetes-troubleshooting/01-kubectl-commands
+$ POD=$(kubectl get pod -n session14 -l app=shop-api -o jsonpath="{.items[0].metadata.name}"); echo $POD
+shop-api-7bfcdcb467-9s97s
+
+$ kubectl logs $POD -n session14 --tail=3
+Defaulted container "api" out of: api, access-logger
+2026/10/07 18:00:28 [notice] 1#1: start worker process 48
+2026/10/07 18:00:28 [notice] 1#1: start worker process 49
+2026/10/07 18:00:28 [notice] 1#1: start worker process 50
+
+$ kubectl logs $POD -n session14 -c access-logger --tail=4
+18:00:32 order #2 processed
+18:00:36 order #3 processed
+18:00:40 order #4 processed
+18:00:44 order #5 processed
+
+$ kubectl logs $POD -n session14 -c api --tail=3
+2026/10/07 18:00:28 [notice] 1#1: start worker process 48
+2026/10/07 18:00:28 [notice] 1#1: start worker process 49
+2026/10/07 18:00:28 [notice] 1#1: start worker process 50
+
+$ kubectl logs -n session14 -l app=shop-api -c access-logger --prefix --tail=2
+[pod/shop-api-7bfcdcb467-9s97s/access-logger] 18:00:40 order #4 processed
+[pod/shop-api-7bfcdcb467-9s97s/access-logger] 18:00:44 order #5 processed
+[pod/shop-api-7bfcdcb467-cvvps/access-logger] 18:00:39 order #4 processed
+[pod/shop-api-7bfcdcb467-cvvps/access-logger] 18:00:43 order #5 processed
+
+$ kubectl logs $POD -n session14 -c access-logger --since=10s --timestamps
+2026-10-07T18:00:36.479815448Z 18:00:36 order #3 processed
+2026-10-07T18:00:40.481443536Z 18:00:40 order #4 processed
+2026-10-07T18:00:44.482754226Z 18:00:44 order #5 processed
+
+$ timeout 9 kubectl logs -f $POD -n session14 -c access-logger --tail=1
+18:00:44 order #5 processed
+18:00:48 order #6 processed
+18:00:52 order #7 processed
+
+$ kubectl exec $POD -n session14 -c api -- nginx -v
+nginx version: nginx/1.27.5
+
+$ kubectl exec $POD -n session14 -c api -- sh -c "hostname; cat /etc/os-release | head -2; ls /usr/share/nginx/html"
+shop-api-7bfcdcb467-9s97s
+NAME="Alpine Linux"
+ID=alpine
+50x.html
+index.html
+
+$ kubectl exec $POD -n session14 -c api -- env | grep -E "^(HOSTNAME|SHOP_API|KUBERNETES_SERVICE)" | sort
+HOSTNAME=shop-api-7bfcdcb467-9s97s
+KUBERNETES_SERVICE_HOST=10.96.0.1
+KUBERNETES_SERVICE_PORT=443
+KUBERNETES_SERVICE_PORT_HTTPS=443
+SHOP_API_PORT_80_TCP_ADDR=10.96.230.30
+SHOP_API_PORT_80_TCP_PORT=80
+SHOP_API_PORT_80_TCP_PROTO=tcp
+SHOP_API_PORT_80_TCP=tcp://10.96.230.30:80
+SHOP_API_PORT=tcp://10.96.230.30:80
+SHOP_API_SERVICE_HOST=10.96.230.30
+SHOP_API_SERVICE_PORT=80
+
+$ kubectl exec $POD -n session14 -c access-logger -- wget -qO- http://localhost:80 | grep -o "<title>.*</title>"
+<title>Welcome to nginx!</title>
+
+$ kubectl exec -n session14 client -- wget -qO- http://shop-api.session14.svc.cluster.local | grep -o "<title>.*</title>"
+<title>Welcome to nginx!</title>
+
+$ kubectl exec -n session14 client -- cat /etc/resolv.conf
+search session14.svc.cluster.local svc.cluster.local cluster.local
+nameserver 10.96.0.10
+options ndots:5
+

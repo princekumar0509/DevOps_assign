@@ -1,0 +1,120 @@
+#CWD ~/Downloads/Devops-Assignments-main/session-15-helm/03-mini-project
+$ tree notes-chart
+notes-chart
+├── Chart.yaml
+├── templates
+│   ├── configmap.yaml
+│   ├── deployment.yaml
+│   └── service.yaml
+├── values-prod.yaml
+└── values.yaml
+
+2 directories, 6 files
+
+$ cat notes-chart/Chart.yaml
+apiVersion: v2
+name: notes-chart
+description: A simple Notes application Helm chart
+type: application
+version: 0.1.0
+appVersion: "1.0"
+
+$ diff notes-chart/values.yaml notes-chart/values-prod.yaml
+1c1
+< replicaCount: 1
+---
+> replicaCount: 3
+5c5
+<   tag: "1.24"
+---
+>   tag: "1.25"
+13c13
+<   environment: development
+---
+>   environment: production
+
+$ helm lint notes-chart
+==> Linting notes-chart
+[INFO] Chart.yaml: icon is recommended
+
+1 chart(s) linted, 0 chart(s) failed
+
+$ helm lint notes-chart -f notes-chart/values-prod.yaml
+==> Linting notes-chart
+[INFO] Chart.yaml: icon is recommended
+
+1 chart(s) linted, 0 chart(s) failed
+
+$ helm template notes-dev notes-chart
+---
+# Source: notes-chart/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: notes-dev-config
+data:
+  APP_NAME: "notes-app"
+  ENVIRONMENT: "development"
+  # small landing page so the environment is visible from outside the cluster
+  index.html: |
+    <html><head><title>notes-app</title></head>
+    <body>
+      <h1>notes-app (development)</h1>
+      <p>release notes-dev, revision 1, image nginx:1.24</p>
+      <p>maintained by Prince Kumar</p>
+    </body></html>
+
+---
+# Source: notes-chart/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: notes-dev-svc
+spec:
+  type: NodePort
+  selector:
+    app: notes-dev
+  ports:
+    - port: 80
+      targetPort: 80
+      nodePort: 30090
+
+---
+# Source: notes-chart/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notes-dev-deploy
+  labels:
+    app: notes-dev
+    environment: development
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notes-dev
+  template:
+    metadata:
+      labels:
+        app: notes-dev
+      annotations:
+        # roll the Pods whenever the ConfigMap content changes
+        checksum/config: 2091425560830b13ff2806c8793e24ce4a3085779ef82b5db84bb55aea681e9d
+    spec:
+      containers:
+        - name: notes
+          image: "nginx:1.24"
+          ports:
+            - containerPort: 80
+          envFrom:
+            - configMapRef:
+                name: notes-dev-config
+          volumeMounts:
+            - name: page
+              mountPath: /usr/share/nginx/html/index.html
+              subPath: index.html
+      volumes:
+        - name: page
+          configMap:
+            name: notes-dev-config
+

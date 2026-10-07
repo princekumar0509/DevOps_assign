@@ -1,0 +1,25 @@
+#CWD ~/Downloads/Devops-Assignments-main
+$ whoami; hostname; uname -sr; lsb_release -ds
+prince-kumar
+prince-kumar-VivoBook-ASUSLaptop-K3502ZA-S3502ZA
+Linux 7.0.0-34-generic
+Ubuntu 24.04.2 LTS
+
+$ docker version --format "Docker client {{.Client.Version}} / server {{.Server.Version}}"
+Docker client 29.7.2 / server 29.7.2
+
+$ kind version
+kind v0.33.0 go1.26.7 linux/amd64
+
+$ kubectl version --client | head -1
+Client Version: v1.37.0
+
+$ helm version --short
+v4.3.0+gbec5b06
+
+$ terraform version | head -1
+Terraform v1.16.5
+
+$ python3 --version
+Python 3.12.3
+

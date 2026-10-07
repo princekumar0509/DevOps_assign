@@ -1,0 +1,10 @@
+# A StorageClass describes *how* to create volumes on demand.
+# kind ships the rancher local-path provisioner; this class reuses it but
+# keeps volumes after the claim is deleted (Retain) instead of wiping them.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: local-retain
+provisioner: rancher.io/local-path
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer   # bind only once a Pod needs it

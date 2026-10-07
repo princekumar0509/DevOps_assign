@@ -1,0 +1,121 @@
+#CWD ~/Downloads/Devops-Assignments-main/session-14-kubernetes-troubleshooting/01-kubectl-commands
+$ kubectl events -n session14 | tail -8
+29s         Normal   Pulled              Pod/shop-api-7bfcdcb467-cvvps    Container image "busybox:1.36" already present on machine and can be accessed by the pod
+29s         Normal   Started             Pod/shop-api-7bfcdcb467-cvvps    Container started
+28s         Normal   Started             Pod/shop-api-7bfcdcb467-9s97s    Container started
+28s         Normal   Created             Pod/shop-api-7bfcdcb467-9s97s    Container created
+28s         Normal   Pulled              Pod/shop-api-7bfcdcb467-9s97s    Container image "busybox:1.36" already present on machine and can be accessed by the pod
+28s         Normal   Started             Pod/shop-api-7bfcdcb467-9s97s    Container started
+28s         Normal   Created             Pod/shop-api-7bfcdcb467-9s97s    Container created
+28s         Normal   Pulled              Pod/shop-api-7bfcdcb467-9s97s    Successfully pulled image "nginx:1.27-alpine" in 862ms (3.682s including waiting). Image size: 20973911 bytes.
+
+$ kubectl events -n session14 --for deployment/shop-api
+LAST SEEN   TYPE     REASON              OBJECT                MESSAGE
+33s         Normal   ScalingReplicaSet   Deployment/shop-api   Scaled up replica set shop-api-7bfcdcb467 from 0 to 2
+
+$ kubectl get events -n session14 --sort-by=.lastTimestamp --field-selector type=Normal | tail -4
+28s         Normal   Pulled              pod/shop-api-7bfcdcb467-9s97s    Container image "busybox:1.36" already present on machine and can be accessed by the pod
+28s         Normal   Started             pod/shop-api-7bfcdcb467-9s97s    Container started
+28s         Normal   Created             pod/shop-api-7bfcdcb467-9s97s    Container created
+28s         Normal   Pulled              pod/shop-api-7bfcdcb467-9s97s    Successfully pulled image "nginx:1.27-alpine" in 862ms (3.682s including waiting). Image size: 20973911 bytes.
+
+$ kubectl events -A --types=Warning | tail -5
+session15            18s                     Warning   Unhealthy          Pod/webapp-d85cb6bd4-6645x                      Readiness probe failed: Get "http://10.244.0.21:80/": dial tcp 10.244.0.21:80: connect: connection refused
+session15            17s                     Warning   Unhealthy          Pod/webapp-d85cb6bd4-n848k                      Readiness probe failed: Get "http://10.244.0.22:80/": dial tcp 10.244.0.22:80: connect: connection refused
+session15            16s                     Warning   Unhealthy          Pod/webapp-d85cb6bd4-54vwq                      Readiness probe failed: Get "http://10.244.0.23:80/": dial tcp 10.244.0.23:80: connect: connection refused
+session15            14s                     Warning   Unhealthy          Pod/webapp-7c8bcb4547-bjqhz                     Readiness probe failed: Get "http://10.244.0.24:80/": dial tcp 10.244.0.24:80: connect: connection refused
+session15            12s                     Warning   Unhealthy          Pod/webapp-7c8bcb4547-sxwgb                     Readiness probe failed: Get "http://10.244.0.25:80/": dial tcp 10.244.0.25:80: connect: connection refused
+
+$ kubectl explain pod.spec.containers.livenessProbe | head -22
+KIND:       Pod
+VERSION:    v1
+
+FIELD: livenessProbe <Probe>
+
+
+DESCRIPTION:
+    Periodic probe of container liveness. Container will be restarted if the
+    probe fails. Cannot be updated. More info:
+    https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
+    Probe describes a health check to be performed against a container to
+    determine whether it is alive or ready to receive traffic.
+    
+FIELDS:
+  exec	<ExecAction>
+    Exec specifies a command to execute in the container.
+
+  failureThreshold	<integer>
+    Minimum consecutive failures for the probe to be considered failed after
+    having succeeded. Defaults to 3. Minimum value is 1.
+
+  grpc	<GRPCAction>
+
+$ kubectl explain deployment.spec.strategy.rollingUpdate.maxSurge
+GROUP:      apps
+KIND:       Deployment
+VERSION:    v1
+
+FIELD: maxSurge <IntOrString>
+
+
+DESCRIPTION:
+    The maximum number of pods that can be scheduled above the desired number of
+    pods. Value can be an absolute number (ex: 5) or a percentage of desired
+    pods (ex: 10%). This can not be 0 if MaxUnavailable is 0. Absolute number is
+    calculated from percentage by rounding up. Defaults to 25%. Example: when
+    this is set to 30%, the new ReplicaSet can be scaled up immediately when the
+    rolling update starts, such that the total number of old and new pods do not
+    exceed 130% of desired pods. Once old pods have been killed, new ReplicaSet
+    can be scaled up further, ensuring that total number of pods running at any
+    time during the update is at most 130% of desired pods.
+    IntOrString is a type that can hold an int32 or a string.  When used in JSON
+    or YAML marshalling and unmarshalling, it produces or consumes the inner
+    type.  This allows you to have, for example, a JSON field that can accept a
+    name or number.
+    
+
+
+$ kubectl explain hpa.spec --recursive | head -20
+GROUP:      autoscaling
+KIND:       HorizontalPodAutoscaler
+VERSION:    v2
+
+FIELD: spec <HorizontalPodAutoscalerSpec>
+
+
+DESCRIPTION:
+    spec is the specification for the behaviour of the autoscaler. More info:
+    https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status.
+    HorizontalPodAutoscalerSpec describes the desired functionality of the
+    HorizontalPodAutoscaler.
+    
+FIELDS:
+  behavior	<HorizontalPodAutoscalerBehavior>
+    scaleDown	<HPAScalingRules>
+      policies	<[]HPAScalingPolicy>
+        periodSeconds	<integer> -required-
+        type	<string> -required-
+        value	<integer> -required-
+
+$ kubectl top nodes
+NAME                       CPU(cores)   CPU(%)   MEMORY(bytes)   MEMORY(%)   
+devops-lab-control-plane   745m         4%       1533Mi          41%         
+
+$ kubectl top pods -n session14 --containers
+POD                         NAME            CPU(cores)   MEMORY(bytes)   
+client                      toolbox         4m           0Mi             
+intruder                    intruder        3m           0Mi             
+inventory-f97787b4b-55s7m   web             0m           12Mi            
+shop-api-7bfcdcb467-9s97s   access-logger   2m           0Mi             
+shop-api-7bfcdcb467-9s97s   api             6m           11Mi            
+shop-api-7bfcdcb467-cvvps   access-logger   3m           0Mi             
+shop-api-7bfcdcb467-cvvps   api             0m           11Mi            
+
+$ kubectl top pods -A --sort-by=memory | head -6
+NAMESPACE            NAME                                               CPU(cores)   MEMORY(bytes)   
+kube-system          kube-apiserver-devops-lab-control-plane            163m         262Mi           
+ingress-nginx        ingress-nginx-controller-596f5b6bcf-m7c6r          6m           179Mi           
+kube-system          kube-controller-manager-devops-lab-control-plane   31m          68Mi            
+kube-system          etcd-devops-lab-control-plane                      70m          39Mi            
+kube-system          kube-scheduler-devops-lab-control-plane            13m          27Mi            
+

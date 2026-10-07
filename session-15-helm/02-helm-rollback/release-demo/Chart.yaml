@@ -1,0 +1,8 @@
+apiVersion: v2
+name: release-demo
+description: Tiny web page that shows which release is live - used to practise helm upgrade and rollback
+type: application
+version: 1.0.0
+appVersion: "1.27-alpine"
+maintainers:
+  - name: Prince Kumar

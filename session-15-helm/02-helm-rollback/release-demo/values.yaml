@@ -1,0 +1,32 @@
+replicaCount: 2
+
+image:
+  repository: nginx
+  tag: "1.27-alpine"
+  pullPolicy: IfNotPresent
+
+# what the page shows - changed on every upgrade
+release:
+  version: v1
+  message: First release of the release-demo page
+  color: "#1565c0"
+
+# readiness probe path; a wrong value here is the "bad upgrade" in the demo
+probe:
+  path: /
+
+resources:
+  requests:
+    cpu: 20m
+    memory: 16Mi
+  limits:
+    cpu: 100m
+    memory: 32Mi
+
+service:
+  port: 80
+
+ingress:
+  enabled: true
+  className: nginx
+  host: release-demo.localhost

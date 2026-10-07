@@ -1,0 +1,47 @@
+#CWD ~/Downloads/Devops-Assignments-main/session-14-kubernetes-troubleshooting/03-mini-project
+$ diff service.yaml service-wrong-selector.yaml
+0a1
+> # Section 8 of the challenge: the selector is deliberately broken.
+9c10
+<     app: troubleshooting-app
+---
+>     app: wrong-app
+
+$ kubectl apply -f service-wrong-selector.yaml
+service/troubleshooting-service configured
+
+$ kubectl get service troubleshooting-service -n challenge -o wide
+NAME                      TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE     SELECTOR
+troubleshooting-service   ClusterIP   10.96.102.140   <none>        80/TCP    3m17s   app=wrong-app
+
+$ kubectl get endpoints troubleshooting-service -n challenge 2>/dev/null
+NAME                      ENDPOINTS   AGE
+troubleshooting-service   <none>      3m17s
+
+$ kubectl exec -n challenge project-broken-pod -- curl -s -m 3 http://troubleshooting-service; echo "curl exit code: $?"
+command terminated with exit code 7
+curl exit code: 7
+
+$ kubectl get pods -n challenge --show-labels
+NAME                                   READY   STATUS    RESTARTS   AGE     LABELS
+project-broken-pod                     1/1     Running   0          1s      <none>
+troubleshooting-app-59d4957864-lnwdl   1/1     Running   0          3m17s   app=troubleshooting-app,pod-template-hash=59d4957864
+troubleshooting-app-59d4957864-rwhdc   1/1     Running   0          3m17s   app=troubleshooting-app,pod-template-hash=59d4957864
+
+$ kubectl describe service troubleshooting-service -n challenge | grep -E "Selector|Endpoints"
+Selector:                 app=wrong-app
+Endpoints:                
+
+$ kubectl apply -f service.yaml
+service/troubleshooting-service configured
+
+$ kubectl get endpoints troubleshooting-service -n challenge 2>/dev/null
+NAME                      ENDPOINTS                       AGE
+troubleshooting-service   10.244.0.76:80,10.244.0.77:80   3m18s
+
+$ kubectl exec -n challenge project-broken-pod -- curl -s -m 3 http://troubleshooting-service | grep "<title>"
+command terminated with exit code 7
+
+$ kubectl exec -n challenge project-broken-pod -- getent hosts troubleshooting-service.challenge.svc.cluster.local
+10.96.102.140   troubleshooting-service.challenge.svc.cluster.local
+

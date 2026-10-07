@@ -1,0 +1,17 @@
+# Static provisioning: an admin creates the PersistentVolume up front.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: static-pv-1gi
+  labels:
+    provisioned-by: admin
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual          # matched by name, no provisioner involved
+  hostPath:
+    path: /var/static-pv-1gi
+    type: DirectoryOrCreate

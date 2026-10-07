@@ -1,0 +1,45 @@
+#CWD ~/Devops-Assignments/session-13-storage-hpa-probes/04-mini-project
+$ POD_NAME=$(kubectl get pods -n production-webapp -l app=web-app -o jsonpath="{.items[0].metadata.name}"); echo $POD_NAME
+web-app-d45775485-qjzkl
+
+$ kubectl exec -n production-webapp "$POD_NAME" -- sh -c "echo \"Student: Ratnesh Vaibhav (24bcs10413)\" > /data/student.txt"
+
+$ kubectl exec -n production-webapp "$POD_NAME" -- cat /data/student.txt
+Student: Ratnesh Vaibhav (24bcs10413)
+
+$ kubectl delete pod -n production-webapp "$POD_NAME"
+pod "web-app-d45775485-qjzkl" deleted from production-webapp namespace
+
+$ kubectl wait --for=condition=Ready pod -l app=web-app -n production-webapp --timeout=120s
+pod/web-app-d45775485-6v2ss condition met
+pod/web-app-d45775485-qnlh8 condition met
+
+$ kubectl get pods -n production-webapp
+NAME                      READY   STATUS    RESTARTS   AGE
+web-app-d45775485-6v2ss   1/1     Running   0          9s
+web-app-d45775485-qnlh8   1/1     Running   0          76s
+
+$ NEW_POD=$(kubectl get pods -n production-webapp -l app=web-app --sort-by=.metadata.creationTimestamp -o jsonpath="{.items[-1].metadata.name}"); echo $NEW_POD
+web-app-d45775485-6v2ss
+
+$ kubectl exec -n production-webapp "$NEW_POD" -- cat /data/student.txt
+Student: Ratnesh Vaibhav (24bcs10413)
+
+$ kubectl get endpointslice -n production-webapp -l kubernetes.io/service-name=web-service
+NAME                ADDRESSTYPE   PORTS   ENDPOINTS                 AGE
+web-service-b5r7s   IPv4          80      10.244.0.45,10.244.0.46   77s
+
+$ (kubectl port-forward -n production-webapp svc/web-service 8080:80 >/tmp/pf-13.log 2>&1 &) ; sleep 3; curl -s http://localhost:8080 | head -n 6; cat /tmp/pf-13.log
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+html { color-scheme: light dark; }
+Forwarding from 127.0.0.1:8080 -> 80
+Forwarding from [::1]:8080 -> 80
+Handling connection for 8080
+
+$ curl -s -o /dev/null -w "HTTP %{http_code} in %{time_total}s\n" http://localhost:8080/
+HTTP 200 in 0.003543s
+

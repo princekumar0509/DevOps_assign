@@ -1,0 +1,58 @@
+#CWD ~/Downloads/Devops-Assignments-main/session-13-storage-hpa-probes/02-hpa
+$ kubectl get hpa -n session13
+NAME       REFERENCE             TARGETS        MINPODS   MAXPODS   REPLICAS   AGE
+hpa-demo   Deployment/hpa-demo   cpu: 17%/50%   1         5         3          5m1s
+
+$ kubectl top pods -n session13 -l app=hpa-demo
+NAME                       CPU(cores)   MEMORY(bytes)   
+hpa-demo-669574bbb-222k4   18m          13Mi            
+hpa-demo-669574bbb-52llb   16m          13Mi            
+hpa-demo-669574bbb-7hcdz   17m          13Mi            
+
+$ kubectl top pods -n session13 -l app=load-generator --sum
+NAME                             CPU(cores)   MEMORY(bytes)   
+load-generator-59866cbfd-4rltk   47m          1Mi             
+load-generator-59866cbfd-bddpv   143m         1Mi             
+load-generator-59866cbfd-brsvk   40m          1Mi             
+load-generator-59866cbfd-dhrd5   50m          1Mi             
+load-generator-59866cbfd-k4jjp   27m          1Mi             
+load-generator-59866cbfd-lxpcs   51m          2Mi             
+load-generator-59866cbfd-rxqgn   45m          1Mi             
+load-generator-59866cbfd-v84m2   78m          1Mi             
+                                 ________     ________        
+                                 478m         11Mi            
+
+$ kubectl get pods -n session13 -l app=hpa-demo -o wide
+NAME                       READY   STATUS    RESTARTS   AGE    IP            NODE                       NOMINATED NODE   READINESS GATES
+hpa-demo-669574bbb-222k4   1/1     Running   0          4m1s   10.244.0.71   devops-lab-control-plane   <none>           <none>
+hpa-demo-669574bbb-52llb   1/1     Running   0          30s    10.244.0.85   devops-lab-control-plane   <none>           <none>
+hpa-demo-669574bbb-7hcdz   1/1     Running   0          4m1s   10.244.0.70   devops-lab-control-plane   <none>           <none>
+
+$ kubectl get deployment hpa-demo -n session13
+NAME       READY   UP-TO-DATE   AVAILABLE   AGE
+hpa-demo   3/3     3            3           5m23s
+
+$ kubectl describe hpa hpa-demo -n session13 | sed -n "/^Metrics:/,/^Behavior/p;/^Deployment pods/,\$p"
+Metrics:                                               ( current / target )
+  resource cpu on pods  (as a percentage of request):  17% (17m) / 50%
+Min replicas:                                          1
+Max replicas:                                          5
+Behavior:
+Deployment pods:    3 current / 3 desired
+Conditions:
+  Type            Status  Reason               Message
+  ----            ------  ------               -------
+  AbleToScale     True    ScaleDownStabilized  recent recommendations were higher than current one, applying the highest recent recommendation
+  ScalingActive   True    ValidMetricFound     the HPA was able to successfully calculate a replica count from cpu resource utilization (percentage of request)
+  ScalingLimited  False   DesiredWithinRange   the desired count is within the acceptable range
+  ScaledToZero    False   NotScaledToZero      the HPA controller did not scale the workload to zero
+Events:
+  Type     Reason                        Age                 From                       Message
+  ----     ------                        ----                ----                       -------
+  Warning  FailedGetResourceMetric       5m1s                horizontal-pod-autoscaler  failed to get cpu utilization: unable to get metrics for resource cpu: no metrics returned from resource metrics API
+  Warning  FailedComputeMetricsReplicas  5m1s                horizontal-pod-autoscaler  invalid metrics (1 invalid out of 1), first error is: failed to get cpu resource metric value: failed to get cpu utilization: unable to get metrics for resource cpu: no metrics returned from resource metrics API
+  Warning  FailedGetResourceMetric       4m46s               horizontal-pod-autoscaler  failed to get cpu utilization: did not receive metrics for targeted pods (pods might be unready)
+  Warning  FailedComputeMetricsReplicas  4m46s               horizontal-pod-autoscaler  invalid metrics (1 invalid out of 1), first error is: failed to get cpu resource metric value: failed to get cpu utilization: did not receive metrics for targeted pods (pods might be unready)
+  Normal   SuccessfulRescale             76s                 horizontal-pod-autoscaler  New size: 2; reason: All metrics below target
+  Normal   SuccessfulRescale             30s (x2 over 4m1s)  horizontal-pod-autoscaler  New size: 3; reason: cpu resource utilization (percentage of request) above target
+

@@ -1,0 +1,31 @@
+# Single-node kind cluster shared by sessions 13-20.
+# Host port 80 is already used by Apache on this laptop, so the ingress
+# controller's port 80/443 are published on 8088/8443 instead.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: devops-lab
+containerdConfigPatches:
+  # lets containerd read per-registry config from /etc/containerd/certs.d,
+  # which is how the node learns about the local registry on localhost:5001
+  - |-
+    [plugins."io.containerd.cri.v1.images".registry]
+      config_path = "/etc/containerd/certs.d"
+nodes:
+  - role: control-plane
+    kubeadmConfigPatches:
+      - |
+        kind: InitConfiguration
+        nodeRegistration:
+          kubeletExtraArgs:
+            node-labels: "ingress-ready=true"
+    extraPortMappings:
+      - containerPort: 80       # ingress-nginx http
+        hostPort: 8088
+      - containerPort: 443      # ingress-nginx https
+        hostPort: 8443
+      - containerPort: 30090    # NodePort used by the session 15 notes chart
+        hostPort: 30090
+      - containerPort: 30001    # NodePort used by the session 16/17 apps
+        hostPort: 30001
+      - containerPort: 30002
+        hostPort: 30002

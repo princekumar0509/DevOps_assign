@@ -1,0 +1,15 @@
+# BUG: the job builds a ~200 MB list but its memory limit is 32Mi.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: image-resizer
+  namespace: session14
+spec:
+  restartPolicy: OnFailure
+  containers:
+    - name: resizer
+      image: python:3.12-alpine
+      command: ["python3", "-c", "chunks = [b'x' * (10 * 1024 * 1024) for _ in range(20)]; print('processed', len(chunks), 'chunks', flush=True)"]
+      resources:
+        limits:
+          memory: 32Mi

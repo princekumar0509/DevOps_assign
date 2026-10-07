@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: catalog-web
+  namespace: session14
+  labels:
+    issue: image-pull
+spec:
+  containers:
+    - name: web
+      image: nginx:1.27-alpine        # FIX: a tag that exists
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: catalog-cache
+  namespace: session14
+  labels:
+    issue: image-pull
+spec:
+  containers:
+    - name: cache
+      image: redis:7-alpine           # FIX: the real official repository

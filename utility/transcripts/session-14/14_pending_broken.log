@@ -1,0 +1,39 @@
+#CWD ~/Downloads/Devops-Assignments-main/session-14-kubernetes-troubleshooting/02-common-issues/03-pending
+$ kubectl apply -f broken.yaml
+pod/report-generator created
+pod/gpu-trainer created
+
+$ kubectl get pods -n session14 -l issue=pending -o wide
+NAME               READY   STATUS    RESTARTS   AGE   IP       NODE     NOMINATED NODE   READINESS GATES
+gpu-trainer        0/1     Pending   0          0s    <none>   <none>   <none>           <none>
+report-generator   0/1     Pending   0          0s    <none>   <none>   <none>           <none>
+
+$ kubectl describe pod report-generator -n session14 | sed -n "/^Events:/,\$p"
+Events:
+  Type     Reason            Age   From               Message
+  ----     ------            ----  ----               -------
+  Warning  FailedScheduling  0s    default-scheduler  0/1 nodes are available: 1 Insufficient cpu, 1 Insufficient memory. preemption: 0/1 nodes are available: 1 Preemption is not helpful for scheduling.
+
+$ kubectl describe pod gpu-trainer -n session14 | sed -n "/^Events:/,\$p"
+Events:
+  Type     Reason            Age   From               Message
+  ----     ------            ----  ----               -------
+  Warning  FailedScheduling  1s    default-scheduler  0/1 nodes are available: 1 node(s) didn't match Pod's node affinity/selector. preemption: 0/1 nodes are available: 1 Preemption is not helpful for scheduling.
+
+$ kubectl describe node devops-lab-control-plane | grep -A6 -E "^Allocatable:"
+Allocatable:
+  cpu:                16
+  ephemeral-storage:  200925597696
+  hugepages-1Gi:      0
+  hugepages-2Mi:      0
+  memory:             3805048Ki
+  pods:               110
+
+$ kubectl get node devops-lab-control-plane --show-labels | tr "," "\n" | grep -E "accelerator|kubernetes.io/(os|arch|hostname)|ingress"
+devops-lab-control-plane   Ready    control-plane   5m30s   v1.37.0   beta.kubernetes.io/arch=amd64
+beta.kubernetes.io/os=linux
+ingress-ready=true
+kubernetes.io/arch=amd64
+kubernetes.io/hostname=devops-lab-control-plane
+kubernetes.io/os=linux
+

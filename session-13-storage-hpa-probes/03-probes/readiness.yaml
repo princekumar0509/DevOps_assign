@@ -1,0 +1,40 @@
+# Readiness decides whether a Pod receives Service traffic. It never restarts.
+# nginx is running, but /ready.html does not exist yet -> probe returns 404.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: readiness-demo
+  namespace: session13
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: readiness-demo
+  template:
+    metadata:
+      labels:
+        app: readiness-demo
+    spec:
+      containers:
+        - name: web
+          image: nginx:1.27-alpine
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /ready.html
+              port: 80
+            periodSeconds: 3
+            failureThreshold: 1
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: readiness-svc
+  namespace: session13
+spec:
+  selector:
+    app: readiness-demo
+  ports:
+    - port: 80
+      targetPort: 80

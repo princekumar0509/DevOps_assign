@@ -1,0 +1,17 @@
+# One ConfigMap per revision: Pods of the previous revision keep serving their
+# own page while a new revision rolls out (a shared ConfigMap would change under them).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "release-demo.fullname" . }}-page-r{{ .Release.Revision }}
+  labels:
+    {{- include "release-demo.labels" . | nindent 4 }}
+data:
+  index.html: |
+    <!doctype html>
+    <html><head><title>release-demo {{ .Values.release.version }}</title></head>
+    <body style="font-family:sans-serif;background:{{ .Values.release.color }};color:#fff;padding:40px">
+      <h1>release-demo {{ .Values.release.version }}</h1>
+      <p>{{ .Values.release.message }}</p>
+      <p>helm revision {{ .Release.Revision }} &middot; chart {{ .Chart.Version }}</p>
+    </body></html>

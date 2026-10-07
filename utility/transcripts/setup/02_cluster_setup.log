@@ -1,0 +1,152 @@
+#CWD ~/Downloads/Devops-Assignments-main
+$ cat utility/cluster/kind-config.yaml | grep -v "^#"
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: devops-lab
+containerdConfigPatches:
+  # lets containerd read per-registry config from /etc/containerd/certs.d,
+  # which is how the node learns about the local registry on localhost:5001
+  - |-
+    [plugins."io.containerd.cri.v1.images".registry]
+      config_path = "/etc/containerd/certs.d"
+nodes:
+  - role: control-plane
+    kubeadmConfigPatches:
+      - |
+        kind: InitConfiguration
+        nodeRegistration:
+          kubeletExtraArgs:
+            node-labels: "ingress-ready=true"
+    extraPortMappings:
+      - containerPort: 80       # ingress-nginx http
+        hostPort: 8088
+      - containerPort: 443      # ingress-nginx https
+        hostPort: 8443
+      - containerPort: 30090    # NodePort used by the session 15 notes chart
+        hostPort: 30090
+      - containerPort: 30001    # NodePort used by the session 16/17 apps
+        hostPort: 30001
+      - containerPort: 30002
+        hostPort: 30002
+
+$ utility/cluster/setup.sh 2>&1 | grep -v "^$"
+Unable to find image 'registry:2' locally
+2: Pulling from library/registry
+6d464ea18732: Pulling fs layer
+bbbdd6c6894b: Pulling fs layer
+44cf07d57ee4: Pulling fs layer
+8e82f80af0de: Pulling fs layer
+3493bf46cdec: Pulling fs layer
+32a76c78501f: Download complete
+b537bf6d1146: Download complete
+6d464ea18732: Download complete
+bbbdd6c6894b: Download complete
+3493bf46cdec: Download complete
+8e82f80af0de: Download complete
+44cf07d57ee4: Download complete
+bbbdd6c6894b: Pull complete
+44cf07d57ee4: Pull complete
+8e82f80af0de: Pull complete
+6d464ea18732: Pull complete
+3493bf46cdec: Pull complete
+Digest: sha256:a3d8aaa63ed8681a604f1dea0aa03f100d5895b6a58ace528858a7b332415373
+Status: Downloaded newer image for registry:2
+62aee036d0890eaf1bdd71c391594c6bc2341232b71bfe4b1949d75f1a45c15c
+No kind clusters found.
+Creating cluster "devops-lab" ...
+ • Ensuring node image (kindest/node:v1.37.0) 🖼️  ...
+ ✓ Ensuring node image (kindest/node:v1.37.0) 🖼️
+ • Preparing nodes 📦   ...
+ ✓ Preparing nodes 📦 
+ • Writing configuration 📜  ...
+ ✓ Writing configuration 📜
+ • Starting control-plane 🕹️  ...
+ ✓ Starting control-plane 🕹️
+ • Installing CNI 🔌  ...
+ ✓ Installing CNI 🔌
+ • Installing StorageClass 💾  ...
+ ✓ Installing StorageClass 💾
+ • Waiting ≤ 2m0s for control-plane = Ready ⏳  ...
+ ✓ Waiting ≤ 2m0s for control-plane = Ready ⏳
+ • Ready after 16s 💚
+Set kubectl context to "kind-devops-lab"
+You can now use your cluster with:
+kubectl cluster-info --context kind-devops-lab
+Not sure what to do next? 😅  Check out https://kind.sigs.k8s.io/docs/user/quick-start/
+configmap/local-registry-hosting created
+serviceaccount/metrics-server created
+clusterrole.rbac.authorization.k8s.io/system:aggregated-metrics-reader created
+clusterrole.rbac.authorization.k8s.io/system:metrics-server created
+rolebinding.rbac.authorization.k8s.io/metrics-server-auth-reader created
+clusterrolebinding.rbac.authorization.k8s.io/metrics-server:system:auth-delegator created
+clusterrolebinding.rbac.authorization.k8s.io/system:metrics-server created
+service/metrics-server created
+deployment.apps/metrics-server created
+apiservice.apiregistration.k8s.io/v1beta1.metrics.k8s.io created
+deployment.apps/metrics-server patched
+namespace/ingress-nginx created
+serviceaccount/ingress-nginx created
+serviceaccount/ingress-nginx-admission created
+role.rbac.authorization.k8s.io/ingress-nginx created
+role.rbac.authorization.k8s.io/ingress-nginx-admission created
+clusterrole.rbac.authorization.k8s.io/ingress-nginx created
+clusterrole.rbac.authorization.k8s.io/ingress-nginx-admission created
+rolebinding.rbac.authorization.k8s.io/ingress-nginx created
+rolebinding.rbac.authorization.k8s.io/ingress-nginx-admission created
+clusterrolebinding.rbac.authorization.k8s.io/ingress-nginx created
+clusterrolebinding.rbac.authorization.k8s.io/ingress-nginx-admission created
+configmap/ingress-nginx-controller created
+service/ingress-nginx-controller created
+service/ingress-nginx-controller-admission created
+deployment.apps/ingress-nginx-controller created
+job.batch/ingress-nginx-admission-create created
+job.batch/ingress-nginx-admission-patch created
+ingressclass.networking.k8s.io/nginx created
+validatingwebhookconfiguration.admissionregistration.k8s.io/ingress-nginx-admission created
+Waiting for deployment "metrics-server" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "metrics-server" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "metrics-server" rollout to finish: 1 old replicas are pending termination...
+deployment "metrics-server" successfully rolled out
+Waiting for deployment "ingress-nginx-controller" rollout to finish: 0 of 1 updated replicas are available...
+deployment "ingress-nginx-controller" successfully rolled out
+
+$ kubectl get nodes -o wide
+NAME                       STATUS   ROLES           AGE    VERSION   INTERNAL-IP   EXTERNAL-IP   OS-IMAGE                       KERNEL-VERSION             CONTAINER-RUNTIME
+devops-lab-control-plane   Ready    control-plane   110s   v1.37.0   172.23.0.2    <none>        Debian GNU/Linux 13 (trixie)   6.12.76-linuxkit (amd64)   containerd://2.3.4
+
+$ kubectl get pods -A
+NAMESPACE            NAME                                               READY   STATUS    RESTARTS   AGE
+ingress-nginx        ingress-nginx-controller-596f5b6bcf-m7c6r          1/1     Running   0          80s
+kube-system          coredns-559f6c778d-jblnt                           1/1     Running   0          100s
+kube-system          coredns-559f6c778d-mpjbk                           1/1     Running   0          100s
+kube-system          etcd-devops-lab-control-plane                      1/1     Running   0          107s
+kube-system          kindnet-bnvbz                                      1/1     Running   0          100s
+kube-system          kube-apiserver-devops-lab-control-plane            1/1     Running   0          107s
+kube-system          kube-controller-manager-devops-lab-control-plane   1/1     Running   0          107s
+kube-system          kube-proxy-n827s                                   1/1     Running   0          100s
+kube-system          kube-scheduler-devops-lab-control-plane            1/1     Running   0          107s
+kube-system          metrics-server-84c99cb944-mjgwf                    1/1     Running   0          81s
+local-path-storage   local-path-provisioner-75f7fc7dc5-g5rsn            1/1     Running   0          100s
+
+$ kubectl top nodes
+NAME                       CPU(cores)   CPU(%)   MEMORY(bytes)   MEMORY(%)   
+devops-lab-control-plane   456m         2%       1318Mi          35%         
+
+$ docker pull -q nginx:1.27-alpine && docker tag nginx:1.27-alpine localhost:5001/nginx:registry-test && docker push -q localhost:5001/nginx:registry-test
+docker.io/library/nginx:1.27-alpine
+localhost:5001/nginx:registry-test
+
+ Info -> Not all multiplatform-content is present and only the available single-platform image was pushed
+         sha256:65645c7bb6a0661892a8b03b89d0743208a18dd2f3f17a54ef4b76fb8e2f2a10 -> sha256:62223d644fa234c3a1cc785ee14242ec47a77364226f1c811d2f669f96dc2ac8
+
+$ curl -s http://localhost:5001/v2/_catalog
+{"repositories":["nginx"]}
+
+$ kubectl run registry-test --image=localhost:5001/nginx:registry-test --restart=Never && kubectl wait --for=condition=Ready pod/registry-test --timeout=90s
+pod/registry-test created
+pod/registry-test condition met
+
+$ kubectl get pod registry-test -o jsonpath="{.status.containerStatuses[0].imageID}{\"\n\"}" && kubectl delete pod registry-test
+localhost:5001/nginx@sha256:62223d644fa234c3a1cc785ee14242ec47a77364226f1c811d2f669f96dc2ac8
+pod "registry-test" deleted from default namespace
+

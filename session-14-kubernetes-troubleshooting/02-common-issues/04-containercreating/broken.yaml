@@ -1,0 +1,18 @@
+# BUG: mounts a ConfigMap that was never created, so the kubelet cannot
+# set up the volume and the container is never started.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pricing-api
+  namespace: session14
+spec:
+  containers:
+    - name: api
+      image: nginx:1.27-alpine
+      volumeMounts:
+        - name: settings
+          mountPath: /etc/pricing
+  volumes:
+    - name: settings
+      configMap:
+        name: pricing-settings

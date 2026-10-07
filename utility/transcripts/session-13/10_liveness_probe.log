@@ -1,0 +1,33 @@
+#CWD ~/Downloads/Devops-Assignments-main/session-13-storage-hpa-probes/03-probes
+$ kubectl apply -f liveness.yaml
+pod/liveness-demo created
+
+$ timeout 100 kubectl get pod liveness-demo -n session13 --watch
+NAME            READY   STATUS              RESTARTS   AGE
+liveness-demo   0/1     ContainerCreating   0          0s
+liveness-demo   0/1     ContainerCreating   0          1s
+liveness-demo   1/1     Running             0          1s
+liveness-demo   1/1     Running             1 (0s ago)   71s
+
+$ kubectl logs liveness-demo -n session13 --previous
+started
+simulating a hang
+
+$ kubectl describe pod liveness-demo -n session13 | grep -E "Restart Count|Liveness|Last State|Reason|Exit Code"
+    Last State:     Terminated
+      Reason:       Error
+      Exit Code:    137
+    Restart Count:  1
+    Liveness:       exec [cat /tmp/healthy] delay=5s timeout=1s period=5s successThreshold=1 failureThreshold=3
+  Type     Reason     Age                 From               Message
+  Warning  Unhealthy  60s (x3 over 70s)   kubelet            spec.containers{app}: Liveness probe failed: cat: can't open '/tmp/healthy': No such file or directory
+
+$ kubectl get events -n session13 --field-selector involvedObject.name=liveness-demo --sort-by=.lastTimestamp
+LAST SEEN   TYPE      REASON      OBJECT              MESSAGE
+101s        Normal    Scheduled   pod/liveness-demo   Successfully assigned session13/liveness-demo to devops-lab-control-plane
+60s         Warning   Unhealthy   pod/liveness-demo   Liveness probe failed: cat: can't open '/tmp/healthy': No such file or directory
+60s         Normal    Killing     pod/liveness-demo   Container app failed liveness probe, will be restarted
+30s         Normal    Pulled      pod/liveness-demo   Container image "busybox:1.36" already present on machine and can be accessed by the pod
+30s         Normal    Created     pod/liveness-demo   Container created
+30s         Normal    Started     pod/liveness-demo   Container started
+

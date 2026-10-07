@@ -1,0 +1,20 @@
+#CWD ~/Downloads/Devops-Assignments-main/session-14-kubernetes-troubleshooting/03-mini-project
+$ diff broken-pod.yaml fixed-pod.yaml
+9c9
+<       image: nginx:this-tag-does-not-exist
+---
+>       image: nginx:1.27          # a tag that exists on Docker Hub
+
+$ kubectl delete pod project-broken-pod -n challenge && kubectl apply -f fixed-pod.yaml
+pod "project-broken-pod" deleted from challenge namespace
+pod/project-broken-pod created
+
+$ kubectl wait --for=condition=Ready pod/project-broken-pod -n challenge --timeout=90s
+pod/project-broken-pod condition met
+
+$ kubectl get pods -n challenge
+NAME                                   READY   STATUS    RESTARTS   AGE
+project-broken-pod                     1/1     Running   0          1s
+troubleshooting-app-59d4957864-lnwdl   1/1     Running   0          3m17s
+troubleshooting-app-59d4957864-rwhdc   1/1     Running   0          3m17s
+

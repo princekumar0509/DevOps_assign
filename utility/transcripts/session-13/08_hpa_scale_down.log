@@ -1,0 +1,14 @@
+#CWD ~/Downloads/Devops-Assignments-main/session-13-storage-hpa-probes/02-hpa
+$ kubectl delete -f load-generator.yaml
+deployment.apps "load-generator" deleted from session13 namespace
+
+$ timeout 220 kubectl get hpa hpa-demo -n session13 --watch
+Error from server (NotFound): horizontalpodautoscalers.autoscaling "hpa-demo" not found
+
+$ kubectl get pods -n session13 -l app=hpa-demo
+NAME                        READY   STATUS    RESTARTS   AGE
+hpa-demo-7545dc4b55-zx99x   1/1     Running   0          112s
+
+$ kubectl describe hpa hpa-demo -n session13 | sed -n "/^Events:/,\$p"
+Error from server (NotFound): horizontalpodautoscalers.autoscaling "hpa-demo" not found
+

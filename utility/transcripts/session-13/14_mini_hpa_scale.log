@@ -1,0 +1,54 @@
+#CWD ~/Devops-Assignments/session-13-storage-hpa-probes/04-mini-project
+$ kubectl get hpa -n production-webapp
+NAME          REFERENCE            TARGETS        MINPODS   MAXPODS   REPLICAS   AGE
+web-app-hpa   Deployment/web-app   cpu: 24%/50%   2         5         2          14m
+
+$ kubectl apply -f load-generator-ab.yaml
+pod/load-generator-ab created
+
+$ timeout 150 kubectl get hpa -n production-webapp --watch
+NAME          REFERENCE            TARGETS        MINPODS   MAXPODS   REPLICAS   AGE
+web-app-hpa   Deployment/web-app   cpu: 24%/50%   2         5         2          14m
+web-app-hpa   Deployment/web-app   cpu: 25%/50%   2         5         2          15m
+web-app-hpa   Deployment/web-app   cpu: 10%/50%   2         5         2          15m
+web-app-hpa   Deployment/web-app   cpu: 131%/50%   2         5         2          15m
+web-app-hpa   Deployment/web-app   cpu: 201%/50%   2         5         4          15m
+web-app-hpa   Deployment/web-app   cpu: 200%/50%   2         5         5          16m
+web-app-hpa   Deployment/web-app   cpu: 167%/50%   2         5         5          16m
+web-app-hpa   Deployment/web-app   cpu: 174%/50%   2         5         5          16m
+web-app-hpa   Deployment/web-app   cpu: 186%/50%   2         5         5          16m
+web-app-hpa   Deployment/web-app   cpu: 181%/50%   2         5         5          17m
+web-app-hpa   Deployment/web-app   cpu: 186%/50%   2         5         5          17m
+
+$ kubectl top pods -n production-webapp
+NAME                      CPU(cores)   MEMORY(bytes)   
+load-generator-ab         361m         40Mi            
+web-app-d45775485-6v2ss   200m         10Mi            
+web-app-d45775485-7c5qr   143m         10Mi            
+web-app-d45775485-jt8kh   200m         10Mi            
+web-app-d45775485-qnlh8   201m         14Mi            
+web-app-d45775485-zjs7p   186m         10Mi            
+
+$ kubectl get pods -n production-webapp -o wide
+NAME                      READY   STATUS    RESTARTS   AGE     IP            NODE                       NOMINATED NODE   READINESS GATES
+load-generator-ab         1/1     Running   0          2m30s   10.244.0.49   devops-lab-control-plane   <none>           <none>
+web-app-d45775485-6v2ss   1/1     Running   0          16m     10.244.0.46   devops-lab-control-plane   <none>           <none>
+web-app-d45775485-7c5qr   1/1     Running   0          95s     10.244.0.52   devops-lab-control-plane   <none>           <none>
+web-app-d45775485-jt8kh   1/1     Running   0          110s    10.244.0.50   devops-lab-control-plane   <none>           <none>
+web-app-d45775485-qnlh8   1/1     Running   0          17m     10.244.0.45   devops-lab-control-plane   <none>           <none>
+web-app-d45775485-zjs7p   1/1     Running   0          110s    10.244.0.51   devops-lab-control-plane   <none>           <none>
+
+$ kubectl describe hpa web-app-hpa -n production-webapp | sed -n "/^Conditions:/,\$p" | grep -v -E "FailedGet|FailedCompute"
+Conditions:
+  Type            Status  Reason            Message
+  ----            ------  ------            -------
+  AbleToScale     True    ReadyForNewScale  recommended size matches current size
+  ScalingActive   True    ValidMetricFound  the HPA was able to successfully calculate a replica count from cpu resource utilization (percentage of request)
+  ScalingLimited  True    TooManyReplicas   the desired replica count is more than the maximum replica count
+  ScaledToZero    False   NotScaledToZero   the HPA controller did not scale the workload to zero
+Events:
+  Type     Reason                        Age   From                       Message
+  ----     ------                        ----  ----                       -------
+  Normal   SuccessfulRescale             110s  horizontal-pod-autoscaler  New size: 4; reason: cpu resource utilization (percentage of request) above target
+  Normal   SuccessfulRescale             95s   horizontal-pod-autoscaler  New size: 5; reason: cpu resource utilization (percentage of request) above target
+

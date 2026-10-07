@@ -1,0 +1,38 @@
+#CWD ~/Devops-Assignments/session-13-storage-hpa-probes/04-mini-project
+$ kubectl patch deployment web-app -n production-webapp --type=json -p="[{\"op\":\"replace\",\"path\":\"/spec/template/spec/containers/0/readinessProbe/httpGet/path\",\"value\":\"/does-not-exist\"}]"
+deployment.apps/web-app patched
+
+$ kubectl rollout status deployment/web-app -n production-webapp --timeout=40s
+Waiting for deployment "web-app" rollout to finish: 0 out of 2 new replicas have been updated...
+Waiting for deployment "web-app" rollout to finish: 0 out of 2 new replicas have been updated...
+Waiting for deployment "web-app" rollout to finish: 0 out of 2 new replicas have been updated...
+Waiting for deployment "web-app" rollout to finish: 0 out of 2 new replicas have been updated...
+Waiting for deployment "web-app" rollout to finish: 0 of 2 updated replicas are available...
+error: timed out waiting for the condition
+
+$ kubectl get pods -n production-webapp -l app=web-app
+NAME                       READY   STATUS    RESTARTS   AGE
+web-app-5945bfc776-77xwj   0/1     Running   0          40s
+web-app-5945bfc776-nl8g9   0/1     Running   0          40s
+
+$ kubectl get endpointslice -n production-webapp -l kubernetes.io/service-name=web-service -o jsonpath="{range .items[*].endpoints[*]}{.addresses[0]}  ready={.conditions.ready}{\"\n\"}{end}"
+10.244.0.83  ready=false
+10.244.0.84  ready=false
+
+$ kubectl describe pod -n production-webapp -l app=web-app | grep -m1 "Readiness probe failed"
+  Warning  Unhealthy  1s (x7 over 31s)  kubelet            spec.containers{nginx}: Readiness probe failed: HTTP probe failed with statuscode: 404
+
+$ kubectl apply -f deployment.yaml && kubectl rollout status deployment/web-app -n production-webapp --timeout=120s
+deployment.apps/web-app configured
+Waiting for deployment "web-app" rollout to finish: 0 out of 2 new replicas have been updated...
+Waiting for deployment "web-app" rollout to finish: 0 out of 2 new replicas have been updated...
+Waiting for deployment "web-app" rollout to finish: 0 out of 2 new replicas have been updated...
+Waiting for deployment "web-app" rollout to finish: 0 out of 2 new replicas have been updated...
+Waiting for deployment "web-app" rollout to finish: 0 of 2 updated replicas are available...
+Waiting for deployment "web-app" rollout to finish: 1 of 2 updated replicas are available...
+deployment "web-app" successfully rolled out
+
+$ kubectl get endpointslice -n production-webapp -l kubernetes.io/service-name=web-service -o jsonpath="{range .items[*].endpoints[*]}{.addresses[0]}  ready={.conditions.ready}{\"\n\"}{end}"
+10.244.0.85  ready=true
+10.244.0.86  ready=true
+

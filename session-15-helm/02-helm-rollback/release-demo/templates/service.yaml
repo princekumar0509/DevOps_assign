@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "release-demo.fullname" . }}
+  labels:
+    {{- include "release-demo.labels" . | nindent 4 }}
+spec:
+  selector:
+    {{- include "release-demo.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: http
+      port: {{ .Values.service.port }}
+      targetPort: http

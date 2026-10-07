@@ -1,0 +1,28 @@
+# BUG: the frontend lives in namespace "storefront" and calls the backend by
+# its short name - which only resolves inside the backend's own namespace.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: storefront
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-config
+  namespace: storefront
+data:
+  INVENTORY_URL: http://inventory-svc
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: frontend
+  namespace: storefront
+spec:
+  containers:
+    - name: web
+      image: busybox:1.36
+      envFrom:
+        - configMapRef:
+            name: frontend-config
+      command: ["sh", "-c", "while true; do if wget -qO /dev/null -T 3 $INVENTORY_URL; then echo \"$(date -u +%T) inventory OK\"; else echo \"$(date -u +%T) inventory UNREACHABLE ($INVENTORY_URL)\"; fi; sleep 5; done"]

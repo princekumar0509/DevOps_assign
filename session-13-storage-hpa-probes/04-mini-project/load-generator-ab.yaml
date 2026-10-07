@@ -1,0 +1,14 @@
+# The README's single busybox wget loop forks one process per request and
+# only drove nginx to ~45% CPU (no scale-up). ApacheBench keeps 50 keep-alive
+# connections open, which is closer to real traffic.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: load-generator-ab
+  namespace: production-webapp
+spec:
+  restartPolicy: Never
+  containers:
+    - name: ab
+      image: httpd:2.4-alpine
+      command: ["ab", "-k", "-c", "50", "-t", "240", "-n", "50000000", "http://web-service/"]

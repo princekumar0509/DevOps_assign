@@ -1,0 +1,31 @@
+#CWD ~/Downloads/Devops-Assignments-main/session-14-kubernetes-troubleshooting/02-common-issues/05-service-connectivity
+$ diff broken-service.yaml fixed-service.yaml
+1,2d0
+< # BUG 1: selector says app=payment (singular) - matches no Pod.
+< # BUG 2: targetPort 8080, but nginx listens on 80.
+10c8
+<     app: payment
+---
+>     app: payments        # FIX 1: matches the Pod label
+13c11
+<       targetPort: 8080
+---
+>       targetPort: 80     # FIX 2: the port the container actually listens on
+
+$ kubectl apply -f fixed-service.yaml
+service/payments-svc configured
+
+$ kubectl describe svc payments-svc -n session14 | grep -E "Selector|TargetPort|Endpoints"
+Selector:                 app=payments
+TargetPort:               80/TCP
+Endpoints:                10.244.0.58:80,10.244.0.59:80
+
+$ kubectl exec -n session14 client -- wget -qO- -T 3 http://payments-svc | grep -o "<title>.*</title>"
+<title>Welcome to nginx!</title>
+
+$ for i in 1 2 3 4; do kubectl exec -n session14 client -- wget -qO /dev/null -S -T 3 http://payments-svc.session14.svc.cluster.local 2>&1 | grep "HTTP/"; done
+  HTTP/1.1 200 OK
+  HTTP/1.1 200 OK
+  HTTP/1.1 200 OK
+  HTTP/1.1 200 OK
+

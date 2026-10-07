@@ -1,0 +1,10 @@
+# FIX: create the missing ConfigMap. The Pod does not need to be recreated -
+# the kubelet keeps retrying the mount and starts the container on its own.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pricing-settings
+  namespace: session14
+data:
+  currency: INR
+  tax-rate: "0.18"

@@ -1,0 +1,31 @@
+# BUG 1: asks for more CPU/memory than any node has.
+# BUG 2: requires a node label that no node carries.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: report-generator
+  namespace: session14
+  labels:
+    issue: pending
+spec:
+  containers:
+    - name: app
+      image: nginx:1.27-alpine
+      resources:
+        requests:
+          cpu: "64"
+          memory: 256Gi
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: gpu-trainer
+  namespace: session14
+  labels:
+    issue: pending
+spec:
+  nodeSelector:
+    accelerator: nvidia-a100
+  containers:
+    - name: app
+      image: nginx:1.27-alpine

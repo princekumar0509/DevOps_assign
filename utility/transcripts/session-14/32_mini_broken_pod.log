@@ -1,0 +1,4 @@
+#CWD ~/Downloads/Devops-Assignments-main/session-14-kubernetes-troubleshooting/03-mini-project
+$ kubectl apply -f broken-pod.yaml
+pod/project-broken-pod created
+

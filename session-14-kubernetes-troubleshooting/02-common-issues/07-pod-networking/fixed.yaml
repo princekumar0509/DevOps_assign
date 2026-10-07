@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ledger
+  namespace: session14
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ledger
+  template:
+    metadata:
+      labels:
+        app: ledger
+    spec:
+      containers:
+        - name: api
+          image: python:3.12-alpine
+          command: ["python3", "-m", "http.server", "8000", "--bind", "0.0.0.0"]   # FIX
+          ports:
+            - containerPort: 8000
+          readinessProbe:            # also added: the kubelet probes the Pod IP,
+            tcpSocket:               # so a 127.0.0.1-only bind would now show as 0/1
+              port: 8000
+            periodSeconds: 3

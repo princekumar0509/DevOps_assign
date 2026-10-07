@@ -1,0 +1,47 @@
+# --- secrets / local config: never commit
+.env
+*.env
+!*.env.example
+*.pem
+*.key
+kubeconfig*
+*.tfvars.json
+secrets.auto.tfvars
+
+# --- terraform working files and state (state contains resource ids/secrets)
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+tfplan
+crash.log
+
+# --- python
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.venv/
+venv/
+*.egg-info/
+
+# --- node / frontend builds
+node_modules/
+dist/
+.vite/
+
+# --- build outputs and CI artifacts produced while running pipelines locally
+build/
+.artifacts/
+reports/tmp/
+
+# --- editor / OS noise
+.DS_Store
+.vscode/
+.idea/
+*.swp
+
+# --- scratch space for screenshots
+*.tmp

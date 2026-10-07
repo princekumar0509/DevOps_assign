@@ -1,0 +1,34 @@
+#CWD ~/Downloads/Devops-Assignments-main/session-15-helm/02-helm-rollback
+$ helm upgrade release-demo ./release-demo -n session15 --set release.version=v2 --set release.message="Second release - new banner and 3 replicas" --set release.color="#2e7d32" --set replicaCount=3 --wait --timeout 120s
+Release "release-demo" has been upgraded. Happy Helming!
+NAME: release-demo
+LAST DEPLOYED: Wed Oct  7 23:40:09 2026
+NAMESPACE: session15
+STATUS: deployed
+REVISION: 2
+DESCRIPTION: Upgrade complete
+TEST SUITE: None
+NOTES:
+release-demo v2 is installed as revision 2.
+
+Open it through the ingress controller (kind maps port 80 to 8088):
+  curl http://release-demo.localhost:8088
+
+$ kubectl get pods -n session15 -l app.kubernetes.io/instance=release-demo -L app.kubernetes.io/version
+NAME                            READY   STATUS        RESTARTS   AGE   VERSION
+release-demo-664cdbcb88-7mrl5   1/1     Running       0          2s    v2
+release-demo-664cdbcb88-r2qpc   1/1     Running       0          4s    v2
+release-demo-664cdbcb88-ztnq5   1/1     Running       0          9s    v2
+release-demo-767bf55f66-kdvwf   1/1     Terminating   0          45s   v1
+
+$ for i in 1 2 3 4; do curl -s http://release-demo.localhost:8088 | grep "<h1>"; done
+  <h1>release-demo v2</h1>
+  <h1>release-demo v2</h1>
+  <h1>release-demo v2</h1>
+  <h1>release-demo v2</h1>
+
+$ helm history release-demo -n session15
+REVISION	UPDATED                 	STATUS    	CHART             	APP VERSION	DESCRIPTION     
+1       	Wed Oct  7 23:39:33 2026	superseded	release-demo-1.0.0	1.27-alpine	Install complete
+2       	Wed Oct  7 23:40:09 2026	deployed  	release-demo-1.0.0	1.27-alpine	Upgrade complete
+

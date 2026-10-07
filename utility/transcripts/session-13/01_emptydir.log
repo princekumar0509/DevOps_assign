@@ -1,0 +1,41 @@
+#CWD ~/Downloads/Devops-Assignments-main/session-13-storage-hpa-probes/01-kubernetes-volumes
+$ kubectl apply -f namespace.yaml
+namespace/session13 created
+
+$ kubectl apply -f emptydir-pod.yaml
+pod/emptydir-demo created
+
+$ kubectl wait --for=condition=Ready pod/emptydir-demo -n session13 --timeout=120s
+pod/emptydir-demo condition met
+
+$ kubectl get pod emptydir-demo -n session13 -o wide
+NAME            READY   STATUS    RESTARTS   AGE   IP            NODE                       NOMINATED NODE   READINESS GATES
+emptydir-demo   2/2     Running   0          8s    10.244.0.11   devops-lab-control-plane   <none>           <none>
+
+$ kubectl exec -n session13 emptydir-demo -c reader -- cat /shared/log.txt
+18:00:15 written by writer
+
+$ kubectl exec -n session13 emptydir-demo -c reader -- sh -c "echo test > /shared/x.txt"
+sh: can't create /shared/x.txt: Read-only file system
+command terminated with exit code 1
+
+$ kubectl exec -n session13 emptydir-demo -c writer -- df -h /cache
+Filesystem                Size      Used Available Use% Mounted on
+/dev/vda1               187.1G     13.6G    164.0G   8% /cache
+
+$ kubectl get pod emptydir-demo -n session13 -o jsonpath="{.metadata.uid}{\"\n\"}"
+705a46c4-f5c1-4245-8763-578a70765ea8
+
+$ docker exec devops-lab-control-plane sh -c "ls /var/lib/kubelet/pods/$(kubectl get pod emptydir-demo -n session13 -o jsonpath={.metadata.uid})/volumes/kubernetes.io~empty-dir/"
+shared-cache
+
+$ kubectl delete pod emptydir-demo -n session13
+pod "emptydir-demo" deleted from session13 namespace
+
+$ kubectl apply -f emptydir-pod.yaml && kubectl wait --for=condition=Ready pod/emptydir-demo -n session13 --timeout=120s
+pod/emptydir-demo created
+pod/emptydir-demo condition met
+
+$ kubectl exec -n session13 emptydir-demo -c reader -- cat /shared/log.txt
+18:00:48 written by writer
+

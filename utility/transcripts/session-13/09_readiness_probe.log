@@ -1,0 +1,50 @@
+#CWD ~/Downloads/Devops-Assignments-main/session-13-storage-hpa-probes/03-probes
+$ kubectl apply -f readiness.yaml
+deployment.apps/readiness-demo created
+service/readiness-svc created
+
+$ kubectl get pods -n session13 -l app=readiness-demo
+NAME                              READY   STATUS              RESTARTS   AGE
+readiness-demo-6659f4cf4b-l2qc6   0/1     ContainerCreating   0          0s
+
+$ kubectl get endpointslices -n session13 -l kubernetes.io/service-name=readiness-svc
+NAME                  ADDRESSTYPE   PORTS     ENDPOINTS   AGE
+readiness-svc-tzx4z   IPv4          <unset>   <unset>     0s
+
+$ kubectl describe pod -n session13 -l app=readiness-demo | sed -n "/^Events:/,\$p"
+Events:
+  Type    Reason     Age   From               Message
+  ----    ------     ----  ----               -------
+  Normal  Scheduled  1s    default-scheduler  Successfully assigned session13/readiness-demo-6659f4cf4b-l2qc6 to devops-lab-control-plane
+
+$ kubectl exec -n session13 deploy/readiness-demo -- sh -c "echo ready > /usr/share/nginx/html/ready.html"
+error: unable to upgrade connection: container not found ("web")
+
+$ kubectl get pods -n session13 -l app=readiness-demo -o wide
+NAME                              READY   STATUS              RESTARTS   AGE   IP       NODE                       NOMINATED NODE   READINESS GATES
+readiness-demo-6659f4cf4b-l2qc6   0/1     ContainerCreating   0          1s    <none>   devops-lab-control-plane   <none>           <none>
+
+$ kubectl get endpointslices -n session13 -l kubernetes.io/service-name=readiness-svc
+NAME                  ADDRESSTYPE   PORTS     ENDPOINTS   AGE
+readiness-svc-tzx4z   IPv4          <unset>   <unset>     1s
+
+$ kubectl exec -n session13 deploy/readiness-demo -- rm /usr/share/nginx/html/ready.html
+error: unable to upgrade connection: container not found ("web")
+
+$ kubectl get pods -n session13 -l app=readiness-demo
+NAME                              READY   STATUS              RESTARTS   AGE
+readiness-demo-6659f4cf4b-l2qc6   0/1     ContainerCreating   0          1s
+
+$ kubectl get endpointslices -n session13 -l kubernetes.io/service-name=readiness-svc
+NAME                  ADDRESSTYPE   PORTS   ENDPOINTS      AGE
+readiness-svc-tzx4z   IPv4          80      10.244.0.101   1s
+
+$ kubectl get endpointslice -n session13 -l kubernetes.io/service-name=readiness-svc -o jsonpath="{range .items[*].endpoints[*]}{.addresses[0]}  ready={.conditions.ready}{\"\n\"}{end}"
+10.244.0.101  ready=false
+
+$ kubectl run probe-client -n session13 --rm -i --restart=Never --image=busybox:1.36 -- wget -qO- -T 3 http://readiness-svc/ 2>&1 | grep -v "If you don.t see"
+All commands and output from this session will be recorded in container logs, including credentials and sensitive information passed through the command prompt.
+wget: can't connect to remote host (10.96.107.78): Connection refused
+pod "probe-client" deleted from session13 namespace
+pod session13/probe-client terminated (Error)
+

@@ -1,0 +1,21 @@
+#CWD ~/Downloads/Devops-Assignments-main/session-13-storage-hpa-probes/02-hpa
+$ kubectl apply -f deployment.yaml -f service.yaml
+deployment.apps/hpa-demo created
+service/hpa-demo-service created
+
+$ kubectl rollout status deployment/hpa-demo -n session13 --timeout=180s
+Waiting for deployment "hpa-demo" rollout to finish: 0 of 1 updated replicas are available...
+deployment "hpa-demo" successfully rolled out
+
+$ kubectl get deployment,svc,pods -n session13 -l app=hpa-demo -o wide
+NAME                       READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS   IMAGES                        SELECTOR
+deployment.apps/hpa-demo   1/1     1            1           48s   php-apache   registry.k8s.io/hpa-example   app=hpa-demo
+
+NAME                            READY   STATUS    RESTARTS   AGE   IP            NODE                       NOMINATED NODE   READINESS GATES
+pod/hpa-demo-7545dc4b55-zx99x   1/1     Running   0          48s   10.244.0.88   devops-lab-control-plane   <none>           <none>
+
+$ kubectl run curl-once -n session13 --rm -i --restart=Never --image=busybox:1.36 -- wget -qO- http://hpa-demo-service
+All commands and output from this session will be recorded in container logs, including credentials and sensitive information passed through the command prompt.
+If you don't see a command prompt, try pressing enter.
+OK!pod "curl-once" deleted from session13 namespace
+

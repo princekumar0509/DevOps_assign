@@ -1,0 +1,32 @@
+#CWD ~/Downloads/Devops-Assignments-main/session-15-helm/01-helm-commands
+$ helm install webapp ./webapp -n session15 --wait --timeout 120s | head -6
+NAME: webapp
+LAST DEPLOYED: Wed Oct  7 23:30:43 2026
+NAMESPACE: session15
+STATUS: deployed
+REVISION: 1
+DESCRIPTION: Install complete
+
+$ helm uninstall webapp -n session15 --keep-history
+release "webapp" uninstalled
+
+$ helm list -n session15
+NAME  	NAMESPACE	REVISION	UPDATED                                	STATUS     	CHART       	APP VERSION
+webapp	session15	1       	2026-10-07 23:30:43.877639759 +0530 IST	uninstalled	webapp-0.1.0	1.27-alpine
+
+$ helm list -n session15 --uninstalled
+NAME  	NAMESPACE	REVISION	UPDATED                                	STATUS     	CHART       	APP VERSION
+webapp	session15	1       	2026-10-07 23:30:43.877639759 +0530 IST	uninstalled	webapp-0.1.0	1.27-alpine
+
+$ helm history webapp -n session15
+REVISION	UPDATED                 	STATUS     	CHART       	APP VERSION	DESCRIPTION            
+1       	Wed Oct  7 23:30:43 2026	uninstalled	webapp-0.1.0	1.27-alpine	Uninstallation complete
+
+$ helm list -A
+NAME  	NAMESPACE	REVISION	UPDATED                                	STATUS     	CHART       	APP VERSION
+webapp	session15	1       	2026-10-07 23:30:43.877639759 +0530 IST	uninstalled	webapp-0.1.0	1.27-alpine
+
+$ helm uninstall webapp -n session15 && helm history webapp -n session15
+release "webapp" uninstalled
+Error: release: not found
+

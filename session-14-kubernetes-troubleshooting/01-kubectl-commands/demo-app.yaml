@@ -1,0 +1,46 @@
+# A small app used to practise the core troubleshooting commands.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shop-api
+  namespace: session14
+  labels:
+    app: shop-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: shop-api
+  template:
+    metadata:
+      labels:
+        app: shop-api
+        tier: backend
+    spec:
+      containers:
+        - name: api
+          image: nginx:1.27-alpine
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: 50m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 64Mi
+        - name: access-logger        # a second container, so -c matters for logs/exec
+          image: busybox:1.36
+          command: ["sh", "-c", "i=0; while true; do i=$((i+1)); echo \"$(date -u +%T) order #$i processed\"; sleep 4; done"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: shop-api
+  namespace: session14
+spec:
+  selector:
+    app: shop-api
+  ports:
+    - port: 80
+      targetPort: 80

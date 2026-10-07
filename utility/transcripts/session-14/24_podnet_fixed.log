@@ -1,0 +1,58 @@
+#CWD ~/Downloads/Devops-Assignments-main/session-14-kubernetes-troubleshooting/02-common-issues/07-pod-networking
+$ diff broken.yaml fixed.yaml
+1,2d0
+< # BUG: the app binds to 127.0.0.1, so it only accepts connections from inside
+< # its own network namespace - other Pods (and the Service) are refused.
+21c19
+<           command: ["python3", "-m", "http.server", "8000", "--bind", "127.0.0.1"]
+---
+>           command: ["python3", "-m", "http.server", "8000", "--bind", "0.0.0.0"]   # FIX
+24,35c22,25
+< ---
+< apiVersion: v1
+< kind: Service
+< metadata:
+<   name: ledger-svc
+<   namespace: session14
+< spec:
+<   selector:
+<     app: ledger
+<   ports:
+<     - port: 80
+<       targetPort: 8000
+---
+>           readinessProbe:            # also added: the kubelet probes the Pod IP,
+>             tcpSocket:               # so a 127.0.0.1-only bind would now show as 0/1
+>               port: 8000
+>             periodSeconds: 3
+
+$ kubectl apply -f fixed.yaml
+deployment.apps/ledger configured
+
+$ kubectl rollout status deployment/ledger -n session14 --timeout=120s
+Waiting for deployment "ledger" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "ledger" rollout to finish: 1 old replicas are pending termination...
+deployment "ledger" successfully rolled out
+
+$ kubectl wait --for=delete pod -n session14 -l app=ledger,pod-template-hash=$(kubectl get rs -n session14 -l app=ledger --sort-by=.metadata.creationTimestamp -o jsonpath="{.items[0].metadata.labels.pod-template-hash}") --timeout=60s
+pod/ledger-bf94898ff-hn4ml condition met
+
+$ kubectl get pods -n session14 -l app=ledger -o wide
+NAME                      READY   STATUS    RESTARTS   AGE   IP            NODE                       NOMINATED NODE   READINESS GATES
+ledger-664c6b9d4b-zz97h   1/1     Running   0          35s   10.244.0.69   devops-lab-control-plane   <none>           <none>
+
+$ kubectl exec -n session14 deploy/ledger -- netstat -tln
+Active Internet connections (only servers)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State       
+tcp        0      0 0.0.0.0:8000            0.0.0.0:*               LISTEN      
+
+$ kubectl exec -n session14 client -- wget -qO- -T 3 http://ledger-svc | head -4
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+
+$ LEDGER_IP=$(kubectl get pod -n session14 -l app=ledger -o jsonpath="{.items[0].status.podIP}"); kubectl exec -n session14 client -- wget -qO /dev/null -S -T 3 http://$LEDGER_IP:8000 2>&1 | grep HTTP/
+  HTTP/1.0 200 OK
+  Server: SimpleHTTP/0.6 Python/3.12.15
+

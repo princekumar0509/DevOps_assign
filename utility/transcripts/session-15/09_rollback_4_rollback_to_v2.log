@@ -1,0 +1,37 @@
+#CWD ~/Downloads/Devops-Assignments-main/session-15-helm/02-helm-rollback
+$ helm rollback release-demo 2 -n session15 --wait --timeout 120s
+Rollback was a success! Happy Helming!
+
+$ helm history release-demo -n session15
+REVISION	UPDATED                 	STATUS    	CHART             	APP VERSION	DESCRIPTION                                                                                                                   
+1       	Wed Oct  7 23:39:33 2026	superseded	release-demo-1.0.0	1.27-alpine	Install complete                                                                                                              
+2       	Wed Oct  7 23:40:09 2026	superseded	release-demo-1.0.0	1.27-alpine	Upgrade complete                                                                                                              
+3       	Wed Oct  7 23:40:23 2026	failed    	release-demo-1.0.0	1.27-alpine	Upgrade "release-demo" failed: resource Deployment/session15/release-demo not ready. status: InProgress, message: Updated: ...
+4       	Wed Oct  7 23:41:09 2026	deployed  	release-demo-1.0.0	1.27-alpine	Rollback to 2                                                                                                                 
+
+$ kubectl get pods -n session15 -l app.kubernetes.io/instance=release-demo -L app.kubernetes.io/version
+NAME                            READY   STATUS        RESTARTS   AGE   VERSION
+release-demo-56cdbc6dfb-mjwr9   0/1     Terminating   0          46s   v3
+release-demo-664cdbcb88-7mrl5   1/1     Running       0          54s   v2
+release-demo-664cdbcb88-r2qpc   1/1     Running       0          56s   v2
+release-demo-664cdbcb88-ztnq5   1/1     Running       0          61s   v2
+
+$ for i in 1 2 3 4; do curl -s http://release-demo.localhost:8088 | grep -E "<h1>"; done; curl -s http://release-demo.localhost:8088 | grep revision
+  <h1>release-demo v2</h1>
+  <h1>release-demo v2</h1>
+  <h1>release-demo v2</h1>
+  <h1>release-demo v2</h1>
+  <p>helm revision 2 &middot; chart 1.0.0</p>
+
+$ helm get values release-demo -n session15
+USER-SUPPLIED VALUES:
+release:
+  color: '#2e7d32'
+  message: Second release - new banner and 3 replicas
+  version: v2
+replicaCount: 3
+
+$ kubectl get configmap -n session15 -l app.kubernetes.io/instance=release-demo
+NAME                   DATA   AGE
+release-demo-page-r2   1      1s
+

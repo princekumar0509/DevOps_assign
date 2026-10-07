@@ -1,0 +1,13 @@
+# Section 8 of the challenge: the selector is deliberately broken.
+apiVersion: v1
+kind: Service
+metadata:
+  name: troubleshooting-service
+  namespace: challenge
+spec:
+  type: ClusterIP
+  selector:
+    app: wrong-app
+  ports:
+    - port: 80
+      targetPort: 80

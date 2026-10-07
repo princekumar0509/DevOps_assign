@@ -1,0 +1,14 @@
+# The claim asks for 500Mi of "manual" storage; Kubernetes binds it to the
+# smallest PV that satisfies size, access mode and class - static-pv-1gi.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: static-claim
+  namespace: session13
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 500Mi

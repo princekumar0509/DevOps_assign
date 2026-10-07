@@ -1,0 +1,92 @@
+#CWD ~/Downloads/Devops-Assignments-main/session-15-helm/01-helm-commands
+$ helm create webapp
+Creating webapp
+
+$ tree webapp
+webapp
+├── charts
+├── Chart.yaml
+├── templates
+│   ├── deployment.yaml
+│   ├── _helpers.tpl
+│   ├── hpa.yaml
+│   ├── httproute.yaml
+│   ├── ingress.yaml
+│   ├── NOTES.txt
+│   ├── serviceaccount.yaml
+│   ├── service.yaml
+│   └── tests
+│       └── test-connection.yaml
+└── values.yaml
+
+4 directories, 11 files
+
+$ cat webapp/Chart.yaml | grep -v "^#" | grep -v "^$"
+apiVersion: v2
+name: webapp
+description: A Helm chart for Kubernetes
+type: application
+version: 0.1.0
+appVersion: "1.16.0"
+
+$ grep -v -E "^\s*#|^\s*$" webapp/values.yaml | head -40
+replicaCount: 1
+image:
+  repository: nginx
+  pullPolicy: IfNotPresent
+  tag: ""
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""
+podAnnotations: {}
+podLabels: {}
+podSecurityContext: {}
+securityContext: {}
+service:
+  type: ClusterIP
+  port: 80
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+httpRoute:
+  enabled: false
+  annotations: {}
+  parentRefs:
+  - name: gateway
+    sectionName: http
+  hostnames:
+  - chart-example.local
+  rules:
+  - matches:
+
+$ helm lint webapp
+==> Linting webapp
+[INFO] Chart.yaml: icon is recommended
+
+1 chart(s) linted, 0 chart(s) failed
+
+$ helm template demo webapp --namespace session15 | grep -E "^(kind|  name):|image:|replicas:"
+kind: ServiceAccount
+  name: demo-webapp
+kind: Service
+  name: demo-webapp
+kind: Deployment
+  name: demo-webapp
+  replicas: 1
+          image: "nginx:1.16.0"
+kind: Pod
+  name: "demo-webapp-test-connection"
+      image: busybox
+

@@ -1,0 +1,21 @@
+#CWD ~/Downloads/Devops-Assignments-main/session-14-kubernetes-troubleshooting/02-common-issues/04-containercreating
+$ kubectl apply -f broken.yaml
+pod/pricing-api created
+
+$ timeout 25 kubectl get pod pricing-api -n session14 --watch
+NAME          READY   STATUS              RESTARTS   AGE
+pricing-api   0/1     ContainerCreating   0          0s
+
+$ kubectl describe pod pricing-api -n session14 | sed -n "/^Events:/,\$p"
+Events:
+  Type     Reason       Age                From               Message
+  ----     ------       ----               ----               -------
+  Normal   Scheduled    25s                default-scheduler  Successfully assigned session14/pricing-api to devops-lab-control-plane
+  Warning  FailedMount  10s (x6 over 25s)  kubelet            MountVolume.SetUp failed for volume "settings" : configmap "pricing-settings" not found
+
+$ kubectl get configmap pricing-settings -n session14
+Error from server (NotFound): configmaps "pricing-settings" not found
+
+$ kubectl get pod pricing-api -n session14 -o jsonpath="{.spec.volumes[0]}{\"\n\"}"
+{"configMap":{"defaultMode":420,"name":"pricing-settings"},"name":"settings"}
+

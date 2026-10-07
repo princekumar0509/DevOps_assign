@@ -1,0 +1,119 @@
+#CWD ~/Downloads/Devops-Assignments-main/session-15-helm/01-helm-commands
+$ sed -i "s/^appVersion: .*/appVersion: \"1.27-alpine\"/; s/^description: .*/description: Demo web app chart for the Session 15 Helm command practice/" webapp/Chart.yaml && grep -E "^(name|description|version|appVersion):" webapp/Chart.yaml
+name: webapp
+description: Demo web app chart for the Session 15 Helm command practice
+version: 0.1.0
+appVersion: "1.27-alpine"
+
+$ helm install webapp ./webapp --namespace session15 --create-namespace --wait --timeout 120s
+NAME: webapp
+LAST DEPLOYED: Wed Oct  7 23:30:23 2026
+NAMESPACE: session15
+STATUS: deployed
+REVISION: 1
+DESCRIPTION: Install complete
+NOTES:
+1. Get the application URL by running these commands:
+  export POD_NAME=$(kubectl get pods --namespace session15 -l "app.kubernetes.io/name=webapp,app.kubernetes.io/instance=webapp" -o jsonpath="{.items[0].metadata.name}")
+  export CONTAINER_PORT=$(kubectl get pod --namespace session15 $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
+  echo "Visit http://127.0.0.1:8080 to use your application"
+  kubectl --namespace session15 port-forward $POD_NAME 8080:$CONTAINER_PORT
+
+$ helm list -n session15
+NAME  	NAMESPACE	REVISION	UPDATED                                	STATUS  	CHART       	APP VERSION
+webapp	session15	1       	2026-10-07 23:30:23.461550745 +0530 IST	deployed	webapp-0.1.0	1.27-alpine
+
+$ helm status webapp -n session15
+NAME: webapp
+LAST DEPLOYED: Wed Oct  7 23:30:23 2026
+NAMESPACE: session15
+STATUS: deployed
+REVISION: 1
+DESCRIPTION: Install complete
+RESOURCES:
+==> v1/ServiceAccount
+NAME     AGE
+webapp   3s
+
+==> v1/Service
+NAME     TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE
+webapp   ClusterIP   10.96.183.137   <none>        80/TCP    3s
+
+==> v1/Deployment
+NAME     READY   UP-TO-DATE   AVAILABLE   AGE
+webapp   1/1     1            1           3s
+
+==> v1/Pod(related)
+NAME                      READY   STATUS    RESTARTS   AGE
+webapp-7c8bcb4547-d9799   1/1     Running   0          3s
+
+
+NOTES:
+1. Get the application URL by running these commands:
+  export POD_NAME=$(kubectl get pods --namespace session15 -l "app.kubernetes.io/name=webapp,app.kubernetes.io/instance=webapp" -o jsonpath="{.items[0].metadata.name}")
+  export CONTAINER_PORT=$(kubectl get pod --namespace session15 $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
+  echo "Visit http://127.0.0.1:8080 to use your application"
+  kubectl --namespace session15 port-forward $POD_NAME 8080:$CONTAINER_PORT
+
+$ kubectl get all -n session15
+NAME                          READY   STATUS    RESTARTS   AGE
+pod/webapp-7c8bcb4547-d9799   1/1     Running   0          3s
+
+NAME             TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE
+service/webapp   ClusterIP   10.96.183.137   <none>        80/TCP    3s
+
+NAME                     READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/webapp   1/1     1            1           3s
+
+NAME                                DESIRED   CURRENT   READY   AGE
+replicaset.apps/webapp-7c8bcb4547   1         1         1       3s
+
+$ helm get values webapp -n session15
+USER-SUPPLIED VALUES:
+null
+
+$ helm get values webapp -n session15 --all | head -12
+COMPUTED VALUES:
+affinity: {}
+autoscaling:
+  enabled: false
+  maxReplicas: 100
+  minReplicas: 1
+  targetCPUUtilizationPercentage: 80
+fullnameOverride: ""
+httpRoute:
+  annotations: {}
+  enabled: false
+  hostnames:
+
+$ helm get manifest webapp -n session15 | grep -E "^# Source|^kind:"
+# Source: webapp/templates/serviceaccount.yaml
+kind: ServiceAccount
+# Source: webapp/templates/service.yaml
+kind: Service
+# Source: webapp/templates/deployment.yaml
+kind: Deployment
+
+$ helm get notes webapp -n session15
+NOTES:
+1. Get the application URL by running these commands:
+  export POD_NAME=$(kubectl get pods --namespace session15 -l "app.kubernetes.io/name=webapp,app.kubernetes.io/instance=webapp" -o jsonpath="{.items[0].metadata.name}")
+  export CONTAINER_PORT=$(kubectl get pod --namespace session15 $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
+  echo "Visit http://127.0.0.1:8080 to use your application"
+  kubectl --namespace session15 port-forward $POD_NAME 8080:$CONTAINER_PORT
+
+
+$ helm get metadata webapp -n session15
+NAME: webapp
+CHART: webapp
+VERSION: 0.1.0
+APP_VERSION: 1.27-alpine
+ANNOTATIONS: 
+LABELS: modifiedAt=1791396026,name=webapp,owner=helm,status=deployed,version=1
+DEPENDENCIES: 
+NAMESPACE: session15
+REVISION: 1
+STATUS: deployed
+DEPLOYED_AT: 2026-10-07T23:30:23+05:30
+APPLY_METHOD: server-side apply
+

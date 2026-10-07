@@ -1,0 +1,26 @@
+#CWD ~/Downloads/Devops-Assignments-main/session-13-storage-hpa-probes/01-kubernetes-volumes
+$ kubectl apply -f hostpath-pod.yaml && kubectl wait --for=condition=Ready pod/hostpath-demo -n session13 --timeout=120s
+pod/hostpath-demo created
+pod/hostpath-demo condition met
+
+$ kubectl exec -n session13 hostpath-demo -- cat /host-data/visits.txt
+hello from pod hostpath-demo at 18:00:49
+
+$ docker exec devops-lab-control-plane ls -l /var/session13-hostpath/
+total 4
+-rw-r--r-- 1 root root 41 Oct  7 18:00 visits.txt
+
+$ docker exec devops-lab-control-plane cat /var/session13-hostpath/visits.txt
+hello from pod hostpath-demo at 18:00:49
+
+$ kubectl delete pod hostpath-demo -n session13
+pod "hostpath-demo" deleted from session13 namespace
+
+$ kubectl apply -f hostpath-pod.yaml && kubectl wait --for=condition=Ready pod/hostpath-demo -n session13 --timeout=120s
+pod/hostpath-demo created
+pod/hostpath-demo condition met
+
+$ kubectl exec -n session13 hostpath-demo -- cat /host-data/visits.txt
+hello from pod hostpath-demo at 18:00:49
+hello from pod hostpath-demo at 18:01:23
+

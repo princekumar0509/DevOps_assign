@@ -1,0 +1,14 @@
+# Long-lived toolbox Pod used to test connectivity/DNS from inside the cluster
+# (kubectl exec into a running Pod is more reliable than `kubectl run -i`).
+apiVersion: v1
+kind: Pod
+metadata:
+  name: client
+  namespace: session14
+  labels:
+    role: client
+spec:
+  containers:
+    - name: toolbox
+      image: busybox:1.36
+      command: ["sh", "-c", "sleep 36000"]

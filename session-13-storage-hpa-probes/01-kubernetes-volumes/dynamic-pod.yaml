@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: dynamic-demo
+  namespace: session13
+spec:
+  containers:
+    - name: app
+      image: busybox:1.36
+      command: ["sh", "-c", "echo 'stored on a dynamically provisioned volume' > /retain/note.txt; echo 'stored on the default class' > /default/note.txt; sleep 3600"]
+      volumeMounts:
+        - name: retain-vol
+          mountPath: /retain
+        - name: default-vol
+          mountPath: /default
+  volumes:
+    - name: retain-vol
+      persistentVolumeClaim:
+        claimName: dynamic-claim
+    - name: default-vol
+      persistentVolumeClaim:
+        claimName: default-class-claim

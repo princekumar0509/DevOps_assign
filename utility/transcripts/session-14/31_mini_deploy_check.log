@@ -1,0 +1,69 @@
+#CWD ~/Downloads/Devops-Assignments-main/session-14-kubernetes-troubleshooting/03-mini-project
+$ kubectl apply -f namespace.yaml -f deployment.yaml -f service.yaml
+namespace/challenge created
+deployment.apps/troubleshooting-app created
+service/troubleshooting-service created
+
+$ kubectl rollout status deployment/troubleshooting-app -n challenge --timeout=120s
+Waiting for deployment "troubleshooting-app" rollout to finish: 0 of 2 updated replicas are available...
+Waiting for deployment "troubleshooting-app" rollout to finish: 1 of 2 updated replicas are available...
+deployment "troubleshooting-app" successfully rolled out
+
+$ kubectl get pods -n challenge -o wide
+NAME                                   READY   STATUS    RESTARTS   AGE   IP            NODE                       NOMINATED NODE   READINESS GATES
+troubleshooting-app-59d4957864-lnwdl   1/1     Running   0          1s    10.244.0.77   devops-lab-control-plane   <none>           <none>
+troubleshooting-app-59d4957864-rwhdc   1/1     Running   0          1s    10.244.0.76   devops-lab-control-plane   <none>           <none>
+
+$ kubectl get service -n challenge
+NAME                      TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE
+troubleshooting-service   ClusterIP   10.96.102.140   <none>        80/TCP    1s
+
+$ POD=$(kubectl get pod -n challenge -l app=troubleshooting-app -o jsonpath="{.items[0].metadata.name}"); kubectl describe pod $POD -n challenge | sed -n "1,8p;/^Containers:/,/^Conditions:/p" | grep -v -E "^\s*$"
+Name:             troubleshooting-app-59d4957864-lnwdl
+Namespace:        challenge
+Priority:         0
+Service Account:  default
+Node:             devops-lab-control-plane/172.23.0.2
+Start Time:       Wed, 07 Oct 2026 23:36:14 +0530
+Labels:           app=troubleshooting-app
+                  pod-template-hash=59d4957864
+Containers:
+  app:
+    Container ID:   containerd://a8664c6b3dd5dbad575939f97a596f3256521792c2a3d63bc2c56a9352f45a89
+    Image:          nginx:1.27
+    Image ID:       docker.io/library/nginx@sha256:6784fb0834aa7dbbe12e3d7471e69c290df3e6ba810dc38b34ae33d3c1c05f7d
+    Port:           80/TCP
+    Host Port:      0/TCP
+    State:          Running
+      Started:      Wed, 07 Oct 2026 23:36:15 +0530
+    Ready:          True
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-khz5l (ro)
+Conditions:
+
+$ kubectl logs $POD -n challenge | tail -4
+2026/10/07 18:06:15 [notice] 1#1: start worker process 46
+2026/10/07 18:06:15 [notice] 1#1: start worker process 47
+2026/10/07 18:06:15 [notice] 1#1: start worker process 48
+2026/10/07 18:06:15 [notice] 1#1: start worker process 49
+
+$ kubectl exec $POD -n challenge -- curl -s localhost | grep -E "<title>|<h1>"
+<title>Welcome to nginx!</title>
+<h1>Welcome to nginx!</h1>
+
+$ kubectl describe service troubleshooting-service -n challenge | grep -E "Selector|TargetPort|Endpoints"
+Selector:                 app=troubleshooting-app
+TargetPort:               80/TCP
+Endpoints:                10.244.0.77:80,10.244.0.76:80
+
+$ kubectl get endpoints troubleshooting-service -n challenge
+Warning: v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice
+NAME                      ENDPOINTS                       AGE
+troubleshooting-service   10.244.0.76:80,10.244.0.77:80   2s
+
+$ kubectl get endpointslice -n challenge -l kubernetes.io/service-name=troubleshooting-service
+NAME                            ADDRESSTYPE   PORTS   ENDPOINTS                 AGE
+troubleshooting-service-sj8vg   IPv4          80      10.244.0.77,10.244.0.76   2s
+

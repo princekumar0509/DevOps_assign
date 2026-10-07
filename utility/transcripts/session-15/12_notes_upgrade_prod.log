@@ -1,0 +1,29 @@
+#CWD ~/Downloads/Devops-Assignments-main/session-15-helm/03-mini-project
+$ helm upgrade notes-dev notes-chart -n notes -f notes-chart/values-prod.yaml --wait --timeout 180s
+Release "notes-dev" has been upgraded. Happy Helming!
+NAME: notes-dev
+LAST DEPLOYED: Wed Oct  7 23:41:12 2026
+NAMESPACE: notes
+STATUS: deployed
+REVISION: 2
+DESCRIPTION: Upgrade complete
+TEST SUITE: None
+
+$ kubectl get pods -n notes -o wide
+NAME                                READY   STATUS        RESTARTS   AGE   IP             NODE                       NOMINATED NODE   READINESS GATES
+notes-dev-deploy-586c94946f-9f756   1/1     Running       0          2s    10.244.0.107   devops-lab-control-plane   <none>           <none>
+notes-dev-deploy-586c94946f-c6s8t   1/1     Running       0          1s    10.244.0.109   devops-lab-control-plane   <none>           <none>
+notes-dev-deploy-586c94946f-sffc8   1/1     Running       0          1s    10.244.0.108   devops-lab-control-plane   <none>           <none>
+notes-dev-deploy-7488ccc47-br2wm    1/1     Terminating   0          4s    10.244.0.104   devops-lab-control-plane   <none>           <none>
+
+$ curl -s http://localhost:30090 | grep -E "<h1>|<p>"
+
+$ kubectl get deploy notes-dev-deploy -n notes -o wide --show-labels
+NAME               READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS   IMAGES       SELECTOR        LABELS
+notes-dev-deploy   3/3     3            3           99s   notes        nginx:1.25   app=notes-dev   app.kubernetes.io/managed-by=Helm,app=notes-dev,environment=production
+
+$ helm history notes-dev -n notes
+REVISION	UPDATED                 	STATUS    	CHART            	APP VERSION	DESCRIPTION     
+1       	Wed Oct  7 23:41:10 2026	superseded	notes-chart-0.1.0	1.0        	Install complete
+2       	Wed Oct  7 23:41:12 2026	deployed  	notes-chart-0.1.0	1.0        	Upgrade complete
+

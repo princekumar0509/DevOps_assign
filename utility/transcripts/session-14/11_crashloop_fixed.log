@@ -1,0 +1,36 @@
+#CWD ~/Downloads/Devops-Assignments-main/session-14-kubernetes-troubleshooting/02-common-issues/01-crashloopbackoff
+$ diff broken.yaml fixed.yaml
+1c1,9
+< # BUG: the app refuses to start without DATABASE_URL, and none is provided.
+---
+> # FIX: supply DATABASE_URL from a ConfigMap (non-secret part of the config).
+> apiVersion: v1
+> kind: ConfigMap
+> metadata:
+>   name: orders-worker-config
+>   namespace: session14
+> data:
+>   DATABASE_URL: postgresql://orders-db.session14.svc.cluster.local:5432/orders
+> ---
+10a19,21
+>       envFrom:
+>         - configMapRef:
+>             name: orders-worker-config
+
+$ kubectl delete pod orders-worker -n session14
+pod "orders-worker" deleted from session14 namespace
+
+$ kubectl apply -f fixed.yaml
+configmap/orders-worker-config created
+pod/orders-worker created
+
+$ kubectl wait --for=condition=Ready pod/orders-worker -n session14 --timeout=90s
+pod/orders-worker condition met
+
+$ timeout 20 kubectl get pod orders-worker -n session14 --watch
+NAME            READY   STATUS    RESTARTS   AGE
+orders-worker   1/1     Running   0          0s
+
+$ kubectl logs orders-worker -n session14
+orders-worker started, using postgresql://orders-db.session14.svc.cluster.local:5432/orders
+

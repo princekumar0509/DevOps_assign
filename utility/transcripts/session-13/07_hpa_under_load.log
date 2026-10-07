@@ -1,0 +1,19 @@
+#CWD ~/Downloads/Devops-Assignments-main/session-13-storage-hpa-probes/02-hpa
+$ kubectl get hpa -n session13
+No resources found in session13 namespace.
+
+$ kubectl top pods -n session13 -l app=hpa-demo
+NAME                        CPU(cores)   MEMORY(bytes)   
+hpa-demo-7545dc4b55-zx99x   500m         31Mi            
+
+$ kubectl get pods -n session13 -l app=hpa-demo -o wide
+NAME                        READY   STATUS    RESTARTS   AGE    IP            NODE                       NOMINATED NODE   READINESS GATES
+hpa-demo-7545dc4b55-zx99x   1/1     Running   0          111s   10.244.0.88   devops-lab-control-plane   <none>           <none>
+
+$ kubectl get deployment hpa-demo -n session13
+NAME       READY   UP-TO-DATE   AVAILABLE   AGE
+hpa-demo   1/1     1            1           112s
+
+$ kubectl describe hpa hpa-demo -n session13 | sed -n "/^Metrics:/,/^Max replicas/p;/^Deployment pods/,\$p"
+Error from server (NotFound): horizontalpodautoscalers.autoscaling "hpa-demo" not found
+

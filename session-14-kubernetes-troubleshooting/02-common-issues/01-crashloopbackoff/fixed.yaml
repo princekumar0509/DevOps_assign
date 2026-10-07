@@ -1,0 +1,33 @@
+# FIX: supply DATABASE_URL from a ConfigMap (non-secret part of the config).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: orders-worker-config
+  namespace: session14
+data:
+  DATABASE_URL: postgresql://orders-db.session14.svc.cluster.local:5432/orders
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: orders-worker
+  namespace: session14
+spec:
+  containers:
+    - name: worker
+      image: python:3.12-alpine
+      envFrom:
+        - configMapRef:
+            name: orders-worker-config
+      command:
+        - python3
+        - -c
+        - |
+          import os, sys, time
+          db = os.environ.get("DATABASE_URL")
+          if not db:
+              print("[FATAL] DATABASE_URL environment variable is missing", file=sys.stderr)
+              sys.exit(1)
+          print(f"orders-worker started, using {db}", flush=True)
+          while True:
+              time.sleep(30)

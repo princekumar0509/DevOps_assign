@@ -1,0 +1,4 @@
+release-demo {{ .Values.release.version }} is installed as revision {{ .Release.Revision }}.
+
+Open it through the ingress controller (kind maps port 80 to 8088):
+  curl http://{{ .Values.ingress.host }}:8088

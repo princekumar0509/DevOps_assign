@@ -1,0 +1,124 @@
+#CWD ~/Downloads/Devops-Assignments-main/session-14-kubernetes-troubleshooting/01-kubectl-commands
+$ kubectl apply -f demo-app.yaml
+deployment.apps/shop-api unchanged
+service/shop-api unchanged
+
+$ kubectl rollout status deployment/shop-api -n session14 --timeout=120s
+deployment "shop-api" successfully rolled out
+
+$ kubectl get pods -n session14
+NAME                        READY   STATUS      RESTARTS   AGE
+billing                     1/1     Running     0          2m38s
+catalog-cache               1/1     Running     0          4m52s
+catalog-web                 1/1     Running     0          4m52s
+client                      1/1     Running     0          7m17s
+gpu-trainer                 1/1     Running     0          4m43s
+image-resizer               0/1     Completed   0          115s
+intruder                    1/1     Running     0          7m16s
+inventory-f97787b4b-55s7m   1/1     Running     0          7m16s
+ledger-664c6b9d4b-zz97h     1/1     Running     0          3m25s
+orders-worker               1/1     Running     0          5m55s
+payments-658bc9d46d-jsntq   1/1     Running     0          4m7s
+payments-658bc9d46d-t4gd9   1/1     Running     0          4m7s
+pricing-api                 1/1     Running     0          4m40s
+report-generator            1/1     Running     0          4m42s
+shop-api-7bfcdcb467-9s97s   2/2     Running     0          7m15s
+shop-api-7bfcdcb467-cvvps   2/2     Running     0          7m15s
+
+$ kubectl get pods -n session14 -o wide
+NAME                        READY   STATUS      RESTARTS   AGE     IP            NODE                       NOMINATED NODE   READINESS GATES
+billing                     1/1     Running     0          2m38s   10.244.0.73   devops-lab-control-plane   <none>           <none>
+catalog-cache               1/1     Running     0          4m52s   10.244.0.52   devops-lab-control-plane   <none>           <none>
+catalog-web                 1/1     Running     0          4m52s   10.244.0.51   devops-lab-control-plane   <none>           <none>
+client                      1/1     Running     0          7m17s   10.244.0.12   devops-lab-control-plane   <none>           <none>
+gpu-trainer                 1/1     Running     0          4m43s   10.244.0.54   devops-lab-control-plane   <none>           <none>
+image-resizer               0/1     Completed   0          115s    10.244.0.75   devops-lab-control-plane   <none>           <none>
+intruder                    1/1     Running     0          7m16s   10.244.0.14   devops-lab-control-plane   <none>           <none>
+inventory-f97787b4b-55s7m   1/1     Running     0          7m16s   10.244.0.13   devops-lab-control-plane   <none>           <none>
+ledger-664c6b9d4b-zz97h     1/1     Running     0          3m25s   10.244.0.69   devops-lab-control-plane   <none>           <none>
+orders-worker               1/1     Running     0          5m55s   10.244.0.37   devops-lab-control-plane   <none>           <none>
+payments-658bc9d46d-jsntq   1/1     Running     0          4m7s    10.244.0.58   devops-lab-control-plane   <none>           <none>
+payments-658bc9d46d-t4gd9   1/1     Running     0          4m7s    10.244.0.59   devops-lab-control-plane   <none>           <none>
+pricing-api                 1/1     Running     0          4m40s   10.244.0.57   devops-lab-control-plane   <none>           <none>
+report-generator            1/1     Running     0          4m42s   10.244.0.53   devops-lab-control-plane   <none>           <none>
+shop-api-7bfcdcb467-9s97s   2/2     Running     0          7m15s   10.244.0.17   devops-lab-control-plane   <none>           <none>
+shop-api-7bfcdcb467-cvvps   2/2     Running     0          7m15s   10.244.0.16   devops-lab-control-plane   <none>           <none>
+
+$ kubectl get pods -n session14 --show-labels
+NAME                        READY   STATUS      RESTARTS   AGE     LABELS
+billing                     1/1     Running     0          2m38s   <none>
+catalog-cache               1/1     Running     0          4m52s   issue=image-pull
+catalog-web                 1/1     Running     0          4m52s   issue=image-pull
+client                      1/1     Running     0          7m17s   role=client
+gpu-trainer                 1/1     Running     0          4m43s   issue=pending
+image-resizer               0/1     Completed   0          115s    <none>
+intruder                    1/1     Running     0          7m16s   role=untrusted
+inventory-f97787b4b-55s7m   1/1     Running     0          7m16s   app=inventory,pod-template-hash=f97787b4b
+ledger-664c6b9d4b-zz97h     1/1     Running     0          3m25s   app=ledger,pod-template-hash=664c6b9d4b
+orders-worker               1/1     Running     0          5m55s   <none>
+payments-658bc9d46d-jsntq   1/1     Running     0          4m7s    app=payments,pod-template-hash=658bc9d46d
+payments-658bc9d46d-t4gd9   1/1     Running     0          4m7s    app=payments,pod-template-hash=658bc9d46d
+pricing-api                 1/1     Running     0          4m40s   <none>
+report-generator            1/1     Running     0          4m42s   issue=pending
+shop-api-7bfcdcb467-9s97s   2/2     Running     0          7m15s   app=shop-api,pod-template-hash=7bfcdcb467,tier=backend
+shop-api-7bfcdcb467-cvvps   2/2     Running     0          7m15s   app=shop-api,pod-template-hash=7bfcdcb467,tier=backend
+
+$ kubectl get pods -n session14 -l app=shop-api,tier=backend
+NAME                        READY   STATUS    RESTARTS   AGE
+shop-api-7bfcdcb467-9s97s   2/2     Running   0          7m15s
+shop-api-7bfcdcb467-cvvps   2/2     Running   0          7m15s
+
+$ kubectl get deploy,rs,svc -n session14 -o wide
+NAME                        READY   UP-TO-DATE   AVAILABLE   AGE     CONTAINERS          IMAGES                           SELECTOR
+deployment.apps/inventory   1/1     1            1           7m17s   web                 nginx:1.27-alpine                app=inventory
+deployment.apps/ledger      1/1     1            1           3m29s   api                 python:3.12-alpine               app=ledger
+deployment.apps/payments    2/2     2            2           4m7s    web                 nginx:1.27-alpine                app=payments
+deployment.apps/shop-api    2/2     2            2           7m16s   api,access-logger   nginx:1.27-alpine,busybox:1.36   app=shop-api
+
+NAME                                  DESIRED   CURRENT   READY   AGE     CONTAINERS          IMAGES                           SELECTOR
+replicaset.apps/inventory-f97787b4b   1         1         1       7m16s   web                 nginx:1.27-alpine                app=inventory,pod-template-hash=f97787b4b
+replicaset.apps/ledger-664c6b9d4b     1         1         1       3m25s   api                 python:3.12-alpine               app=ledger,pod-template-hash=664c6b9d4b
+replicaset.apps/ledger-bf94898ff      0         0         0       3m29s   api                 python:3.12-alpine               app=ledger,pod-template-hash=bf94898ff
+replicaset.apps/payments-658bc9d46d   2         2         2       4m7s    web                 nginx:1.27-alpine                app=payments,pod-template-hash=658bc9d46d
+replicaset.apps/shop-api-7bfcdcb467   2         2         2       7m16s   api,access-logger   nginx:1.27-alpine,busybox:1.36   app=shop-api,pod-template-hash=7bfcdcb467
+
+NAME                    TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE     SELECTOR
+service/inventory-svc   ClusterIP   10.96.184.153   <none>        80/TCP    7m16s   app=inventory
+service/ledger-svc      ClusterIP   10.96.47.215    <none>        80/TCP    3m29s   app=ledger
+service/payments-svc    ClusterIP   10.96.233.24    <none>        80/TCP    4m7s    app=payments
+service/shop-api        ClusterIP   10.96.230.30    <none>        80/TCP    7m15s   app=shop-api
+
+$ kubectl get nodes -o wide
+NAME                       STATUS   ROLES           AGE   VERSION   INTERNAL-IP   EXTERNAL-IP   OS-IMAGE                       KERNEL-VERSION             CONTAINER-RUNTIME
+devops-lab-control-plane   Ready    control-plane   10m   v1.37.0   172.23.0.2    <none>        Debian GNU/Linux 13 (trixie)   6.12.76-linuxkit (amd64)   containerd://2.3.4
+
+$ kubectl get pods -n session14 -o custom-columns=POD:.metadata.name,IP:.status.podIP,NODE:.spec.nodeName,CONTAINERS:.spec.containers[*].name
+POD                         IP            NODE                       CONTAINERS
+billing                     10.244.0.73   devops-lab-control-plane   app
+catalog-cache               10.244.0.52   devops-lab-control-plane   cache
+catalog-web                 10.244.0.51   devops-lab-control-plane   web
+client                      10.244.0.12   devops-lab-control-plane   toolbox
+gpu-trainer                 10.244.0.54   devops-lab-control-plane   app
+image-resizer               10.244.0.75   devops-lab-control-plane   resizer
+intruder                    10.244.0.14   devops-lab-control-plane   intruder
+inventory-f97787b4b-55s7m   10.244.0.13   devops-lab-control-plane   web
+ledger-664c6b9d4b-zz97h     10.244.0.69   devops-lab-control-plane   api
+orders-worker               10.244.0.37   devops-lab-control-plane   worker
+payments-658bc9d46d-jsntq   10.244.0.58   devops-lab-control-plane   web
+payments-658bc9d46d-t4gd9   10.244.0.59   devops-lab-control-plane   web
+pricing-api                 10.244.0.57   devops-lab-control-plane   api
+report-generator            10.244.0.53   devops-lab-control-plane   app
+shop-api-7bfcdcb467-9s97s   10.244.0.17   devops-lab-control-plane   api,access-logger
+shop-api-7bfcdcb467-cvvps   10.244.0.16   devops-lab-control-plane   api,access-logger
+
+$ kubectl get pod -n session14 -l app=shop-api -o jsonpath="{range .items[*]}{.metadata.name}{\"\t\"}{.status.phase}{\"\t\"}{.status.qosClass}{\"\n\"}{end}"
+shop-api-7bfcdcb467-9s97s	Running	Burstable
+shop-api-7bfcdcb467-cvvps	Running	Burstable
+
+$ kubectl get pods -A --sort-by=.metadata.creationTimestamp | tail -5
+session13            load-generator-59866cbfd-k4jjp                     1/1     Running     0          69s
+session13            load-generator-59866cbfd-4rltk                     1/1     Running     0          69s
+session13            load-generator-59866cbfd-lxpcs                     1/1     Running     0          69s
+session13            load-generator-59866cbfd-rxqgn                     1/1     Running     0          69s
+session13            load-generator-59866cbfd-v84m2                     1/1     Running     0          69s
+

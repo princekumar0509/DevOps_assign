@@ -1,0 +1,28 @@
+#CWD ~/Downloads/Devops-Assignments-main/session-14-kubernetes-troubleshooting/02-common-issues/07-pod-networking
+$ kubectl apply -f deny-all-networkpolicy.yaml
+networkpolicy.networking.k8s.io/default-deny-ingress created
+
+$ kubectl exec -n session14 client -- wget -qO- -T 3 http://ledger-svc
+wget: download timed out
+command terminated with exit code 1
+
+$ kubectl exec -n session14 deploy/ledger -- netstat -tln | grep 8000
+tcp        0      0 0.0.0.0:8000            0.0.0.0:*               LISTEN      
+
+$ kubectl get networkpolicy -n session14
+NAME                   POD-SELECTOR   AGE
+default-deny-ingress   <none>         3s
+
+$ kubectl describe networkpolicy default-deny-ingress -n session14
+Name:         default-deny-ingress
+Namespace:    session14
+Created on:   2026-10-07 23:34:51 +0530 IST
+Labels:       <none>
+Annotations:  <none>
+Spec:
+  PodSelector:     <none> (Allowing the specific traffic to all pods in this namespace)
+  Allowing ingress traffic:
+    <none> (Selected pods are isolated for ingress connectivity)
+  Not affecting egress traffic
+  Policy Types: Ingress
+

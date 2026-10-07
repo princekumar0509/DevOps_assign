@@ -1,0 +1,72 @@
+#CWD ~/Downloads/Devops-Assignments-main/session-15-helm/01-helm-commands
+$ helm test webapp -n session15
+NAME: webapp
+LAST DEPLOYED: Wed Oct  7 23:30:23 2026
+NAMESPACE: session15
+STATUS: deployed
+REVISION: 1
+DESCRIPTION: Install complete
+TEST SUITE:     webapp-test-connection
+Last Started:   Wed Oct  7 23:30:27 2026
+Last Completed: Wed Oct  7 23:30:34 2026
+Phase:          Succeeded
+
+$ helm upgrade webapp ./webapp -n session15 --set replicaCount=3 --set image.tag=1.27.5-alpine --wait --timeout 120s
+Release "webapp" has been upgraded. Happy Helming!
+NAME: webapp
+LAST DEPLOYED: Wed Oct  7 23:30:34 2026
+NAMESPACE: session15
+STATUS: deployed
+REVISION: 2
+DESCRIPTION: Upgrade complete
+NOTES:
+1. Get the application URL by running these commands:
+  export POD_NAME=$(kubectl get pods --namespace session15 -l "app.kubernetes.io/name=webapp,app.kubernetes.io/instance=webapp" -o jsonpath="{.items[0].metadata.name}")
+  export CONTAINER_PORT=$(kubectl get pod --namespace session15 $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
+  echo "Visit http://127.0.0.1:8080 to use your application"
+  kubectl --namespace session15 port-forward $POD_NAME 8080:$CONTAINER_PORT
+
+$ kubectl get deploy webapp -n session15 -o wide
+NAME     READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS   IMAGES                SELECTOR
+webapp   3/3     3            3           18s   webapp       nginx:1.27.5-alpine   app.kubernetes.io/instance=webapp,app.kubernetes.io/name=webapp
+
+$ helm get values webapp -n session15
+USER-SUPPLIED VALUES:
+image:
+  tag: 1.27.5-alpine
+replicaCount: 3
+
+$ helm history webapp -n session15
+REVISION	UPDATED                 	STATUS    	CHART       	APP VERSION	DESCRIPTION     
+1       	Wed Oct  7 23:30:23 2026	superseded	webapp-0.1.0	1.27-alpine	Install complete
+2       	Wed Oct  7 23:30:34 2026	deployed  	webapp-0.1.0	1.27-alpine	Upgrade complete
+
+$ helm rollback webapp 1 -n session15 --wait --timeout 120s
+Rollback was a success! Happy Helming!
+
+$ helm history webapp -n session15
+REVISION	UPDATED                 	STATUS    	CHART       	APP VERSION	DESCRIPTION     
+1       	Wed Oct  7 23:30:23 2026	superseded	webapp-0.1.0	1.27-alpine	Install complete
+2       	Wed Oct  7 23:30:34 2026	superseded	webapp-0.1.0	1.27-alpine	Upgrade complete
+3       	Wed Oct  7 23:30:41 2026	deployed  	webapp-0.1.0	1.27-alpine	Rollback to 1   
+
+$ kubectl get deploy webapp -n session15 -o wide
+NAME     READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS   IMAGES              SELECTOR
+webapp   1/1     1            1           20s   webapp       nginx:1.27-alpine   app.kubernetes.io/instance=webapp,app.kubernetes.io/name=webapp
+
+$ helm list -n session15 --all
+Error: unknown flag: --all
+
+$ helm uninstall webapp -n session15
+release "webapp" uninstalled
+
+$ helm list -n session15 --all
+Error: unknown flag: --all
+
+$ kubectl get all -n session15
+NAME                          READY   STATUS        RESTARTS   AGE
+pod/webapp-7c8bcb4547-bjqhz   1/1     Terminating   0          2s
+pod/webapp-d85cb6bd4-54vwq    0/1     Completed     0          4s
+pod/webapp-d85cb6bd4-n848k    0/1     Completed     0          5s
+pod/webapp-test-connection    0/1     Completed     0          16s
+

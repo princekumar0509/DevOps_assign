@@ -1,0 +1,20 @@
+# FIX: keep default-deny, but explicitly allow the client Pods to reach ledger:8000.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-client-to-ledger
+  namespace: session14
+spec:
+  podSelector:
+    matchLabels:
+      app: ledger
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              role: client
+      ports:
+        - protocol: TCP
+          port: 8000

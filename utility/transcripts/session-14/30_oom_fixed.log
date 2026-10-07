@@ -1,0 +1,26 @@
+#CWD ~/Downloads/Devops-Assignments-main/session-14-kubernetes-troubleshooting/02-common-issues/09-oomkilled
+$ diff broken.yaml fixed.yaml | grep -E "^[<>]"
+< # BUG: the job builds a ~200 MB list but its memory limit is 32Mi.
+>         requests:
+>           memory: 256Mi
+<           memory: 32Mi
+>           memory: 320Mi        # FIX: limit sized to what the job really needs
+
+$ kubectl delete pod image-resizer -n session14 && kubectl apply -f fixed.yaml
+pod "image-resizer" deleted from session14 namespace
+pod/image-resizer created
+
+$ timeout 30 kubectl get pod image-resizer -n session14 --watch
+NAME            READY   STATUS              RESTARTS   AGE
+image-resizer   0/1     ContainerCreating   0          0s
+image-resizer   0/1     ContainerCreating   0          0s
+image-resizer   1/1     Running             0          0s
+image-resizer   0/1     Completed           0          1s
+image-resizer   0/1     Completed           0          2s
+
+$ kubectl logs image-resizer -n session14
+processed 20 chunks
+
+$ kubectl get pod image-resizer -n session14 -o jsonpath="{.status.containerStatuses[0].state.terminated.reason} exitCode={.status.containerStatuses[0].state.terminated.exitCode}{\"\n\"}"
+Completed exitCode=0
+

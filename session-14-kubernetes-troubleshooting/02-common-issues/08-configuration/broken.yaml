@@ -1,0 +1,37 @@
+# BUG 1: env refers to key LOG_LVL, but the ConfigMap key is LOG_LEVEL.
+# BUG 2: the Secret db-credentials was never created.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: billing-config
+  namespace: session14
+data:
+  LOG_LEVEL: info
+  CURRENCY: INR
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: billing
+  namespace: session14
+spec:
+  containers:
+    - name: app
+      image: busybox:1.36
+      command: ["sh", "-c", "echo \"log level=$LOG_LEVEL currency=$CURRENCY db_user=$DB_USER\"; sleep 3600"]
+      env:
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: billing-config
+              key: LOG_LVL
+        - name: CURRENCY
+          valueFrom:
+            configMapKeyRef:
+              name: billing-config
+              key: CURRENCY
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: username

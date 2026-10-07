@@ -1,0 +1,58 @@
+#CWD ~/Downloads/Devops-Assignments-main/session-13-storage-hpa-probes/01-kubernetes-volumes
+$ kubectl get storageclass
+NAME                 PROVISIONER             RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+standard (default)   rancher.io/local-path   Delete          WaitForFirstConsumer   false                  4m57s
+
+$ kubectl apply -f storageclass.yaml
+storageclass.storage.k8s.io/local-retain created
+
+$ kubectl get storageclass
+NAME                 PROVISIONER             RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+local-retain         rancher.io/local-path   Retain          WaitForFirstConsumer   false                  0s
+standard (default)   rancher.io/local-path   Delete          WaitForFirstConsumer   false                  4m57s
+
+$ kubectl apply -f dynamic-pvc.yaml
+persistentvolumeclaim/dynamic-claim created
+persistentvolumeclaim/default-class-claim created
+
+$ kubectl get pvc -n session13
+NAME                  STATUS    VOLUME   CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
+default-class-claim   Pending                                      standard       <unset>                 0s
+dynamic-claim         Pending                                      local-retain   <unset>                 0s
+
+$ kubectl describe pvc dynamic-claim -n session13 | sed -n "/^Events:/,\$p"
+Events:
+  Type    Reason                Age   From                         Message
+  ----    ------                ----  ----                         -------
+  Normal  WaitForFirstConsumer  0s    persistentvolume-controller  waiting for first consumer to be created before binding
+
+$ kubectl apply -f dynamic-pod.yaml && kubectl wait --for=condition=Ready pod/dynamic-demo -n session13 --timeout=120s
+pod/dynamic-demo created
+pod/dynamic-demo condition met
+
+$ kubectl get pvc -n session13
+NAME                  STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
+default-class-claim   Bound    pvc-d3c0b9ff-e978-43d5-bd13-1d780ca6edd5   128Mi      RWO            standard       <unset>                 5s
+dynamic-claim         Bound    pvc-7e657b4a-88b1-430d-80c5-98403b8a3cf6   256Mi      RWO            local-retain   <unset>                 5s
+
+$ kubectl get pv -o custom-columns=NAME:.metadata.name,CAPACITY:.spec.capacity.storage,RECLAIM:.spec.persistentVolumeReclaimPolicy,STATUS:.status.phase,CLAIM:.spec.claimRef.name,CLASS:.spec.storageClassName,NODE-PATH:.spec.hostPath.path
+NAME                                       CAPACITY   RECLAIM   STATUS     CLAIM                 CLASS          NODE-PATH
+pvc-7e657b4a-88b1-430d-80c5-98403b8a3cf6   256Mi      Retain    Bound      dynamic-claim         local-retain   /var/local-path-provisioner/pvc-7e657b4a-88b1-430d-80c5-98403b8a3cf6_session13_dynamic-claim
+pvc-d3c0b9ff-e978-43d5-bd13-1d780ca6edd5   128Mi      Delete    Bound      default-class-claim   standard       /var/local-path-provisioner/pvc-d3c0b9ff-e978-43d5-bd13-1d780ca6edd5_session13_default-class-claim
+static-pv-1gi                              1Gi        Retain    Released   static-claim          manual         /var/static-pv-1gi
+
+$ kubectl exec -n session13 dynamic-demo -- sh -c "cat /retain/note.txt /default/note.txt"
+stored on a dynamically provisioned volume
+stored on the default class
+
+$ kubectl delete pod dynamic-demo -n session13 && kubectl delete pvc dynamic-claim default-class-claim -n session13
+pod "dynamic-demo" deleted from session13 namespace
+persistentvolumeclaim "dynamic-claim" deleted from session13 namespace
+persistentvolumeclaim "default-class-claim" deleted from session13 namespace
+
+$ kubectl get pv -o custom-columns=NAME:.metadata.name,RECLAIM:.spec.persistentVolumeReclaimPolicy,STATUS:.status.phase,CLASS:.spec.storageClassName
+NAME                                       RECLAIM   STATUS     CLASS
+pvc-7e657b4a-88b1-430d-80c5-98403b8a3cf6   Retain    Released   local-retain
+pvc-d3c0b9ff-e978-43d5-bd13-1d780ca6edd5   Delete    Released   standard
+static-pv-1gi                              Retain    Released   manual
+

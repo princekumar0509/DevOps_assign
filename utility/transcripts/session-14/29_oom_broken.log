@@ -1,0 +1,35 @@
+#CWD ~/Downloads/Devops-Assignments-main/session-14-kubernetes-troubleshooting/02-common-issues/09-oomkilled
+$ kubectl apply -f broken.yaml
+pod/image-resizer created
+
+$ timeout 40 kubectl get pod image-resizer -n session14 --watch
+NAME            READY   STATUS              RESTARTS   AGE
+image-resizer   0/1     ContainerCreating   0          0s
+image-resizer   0/1     ContainerCreating   0          1s
+image-resizer   1/1     Running             0          1s
+image-resizer   0/1     OOMKilled           0          1s
+image-resizer   1/1     Running             1 (1s ago)   2s
+image-resizer   0/1     OOMKilled           1 (1s ago)   2s
+image-resizer   0/1     CrashLoopBackOff    1 (12s ago)   14s
+image-resizer   1/1     Running             2 (12s ago)   14s
+image-resizer   0/1     OOMKilled           2 (12s ago)   14s
+image-resizer   0/1     CrashLoopBackOff    2 (22s ago)   36s
+image-resizer   1/1     Running             3 (22s ago)   36s
+image-resizer   0/1     OOMKilled           3 (23s ago)   37s
+
+$ kubectl describe pod image-resizer -n session14 | grep -A5 -E "^    Last State:"
+    Last State:     Terminated
+      Reason:       OOMKilled
+      Exit Code:    137
+      Started:      Wed, 07 Oct 2026 23:35:16 +0530
+      Finished:     Wed, 07 Oct 2026 23:35:16 +0530
+    Ready:          False
+
+$ kubectl describe pod image-resizer -n session14 | grep -E "Limits|memory:"
+    Limits:
+      memory:  32Mi
+      memory:     32Mi
+
+$ kubectl get pod image-resizer -n session14 -o jsonpath="{.status.containerStatuses[0].lastState.terminated.reason} exitCode={.status.containerStatuses[0].lastState.terminated.exitCode}{\"\n\"}"
+OOMKilled exitCode=137
+

@@ -1,0 +1,60 @@
+#CWD ~/Devops-Assignments/session-13-storage-hpa-probes/04-mini-project
+$ ls
+deployment.yaml
+hpa.yaml
+namespace.yaml
+pvc.yaml
+service.yaml
+
+$ kubectl apply -f namespace.yaml
+namespace/production-webapp created
+
+$ kubectl apply -f pvc.yaml
+persistentvolumeclaim/web-data created
+
+$ kubectl get pvc -n production-webapp
+NAME       STATUS    VOLUME   CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
+web-data   Pending                                      standard       <unset>                 0s
+
+$ kubectl apply -f deployment.yaml -f service.yaml
+deployment.apps/web-app created
+service/web-service created
+
+$ kubectl rollout status deployment/web-app -n production-webapp --timeout=180s
+Waiting for deployment "web-app" rollout to finish: 0 of 2 updated replicas are available...
+Waiting for deployment "web-app" rollout to finish: 1 of 2 updated replicas are available...
+deployment "web-app" successfully rolled out
+
+$ kubectl get pvc -n production-webapp
+NAME       STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
+web-data   Bound    pvc-314f7418-4a1d-48ff-95f8-8079287bba28   500Mi      RWO            standard       <unset>                 14s
+
+$ kubectl get pods -n production-webapp -o wide
+NAME                      READY   STATUS    RESTARTS   AGE   IP            NODE                       NOMINATED NODE   READINESS GATES
+web-app-d45775485-qjzkl   1/1     Running   0          13s   10.244.0.44   devops-lab-control-plane   <none>           <none>
+web-app-d45775485-qnlh8   1/1     Running   0          13s   10.244.0.45   devops-lab-control-plane   <none>           <none>
+
+$ kubectl apply -f hpa.yaml
+horizontalpodautoscaler.autoscaling/web-app-hpa created
+
+$ kubectl get hpa -n production-webapp
+NAME          REFERENCE            TARGETS       MINPODS   MAXPODS   REPLICAS   AGE
+web-app-hpa   Deployment/web-app   cpu: 1%/50%   2         5         2          45s
+
+$ kubectl get all -n production-webapp
+NAME                          READY   STATUS    RESTARTS   AGE
+pod/web-app-d45775485-qjzkl   1/1     Running   0          59s
+pod/web-app-d45775485-qnlh8   1/1     Running   0          59s
+
+NAME                  TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)   AGE
+service/web-service   ClusterIP   10.96.41.233   <none>        80/TCP    60s
+
+NAME                      READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/web-app   2/2     2            2           60s
+
+NAME                                DESIRED   CURRENT   READY   AGE
+replicaset.apps/web-app-d45775485   2         2         2       60s
+
+NAME                                              REFERENCE            TARGETS       MINPODS   MAXPODS   REPLICAS   AGE
+horizontalpodautoscaler.autoscaling/web-app-hpa   Deployment/web-app   cpu: 1%/50%   2         5         2          46s
+

@@ -1,0 +1,29 @@
+#CWD ~/Downloads/Devops-Assignments-main/session-15-helm/03-mini-project
+$ helm install notes-dev notes-chart -n notes --create-namespace --wait --timeout 180s
+NAME: notes-dev
+LAST DEPLOYED: Wed Oct  7 23:41:10 2026
+NAMESPACE: notes
+STATUS: deployed
+REVISION: 1
+DESCRIPTION: Install complete
+TEST SUITE: None
+
+$ kubectl get pods -n notes
+NAME                               READY   STATUS    RESTARTS   AGE
+notes-dev-deploy-7488ccc47-br2wm   1/1     Running   0          1s
+
+$ kubectl get services -n notes
+NAME            TYPE       CLUSTER-IP    EXTERNAL-IP   PORT(S)        AGE
+notes-dev-svc   NodePort   10.96.205.6   <none>        80:30090/TCP   1s
+
+$ kubectl get configmaps -n notes
+NAME               DATA   AGE
+kube-root-ca.crt   1      9m11s
+notes-dev-config   3      1s
+
+$ curl -s http://localhost:30090 | grep -E "<h1>|<p>"
+
+$ kubectl exec -n notes deploy/notes-dev-deploy -- sh -c "echo APP_NAME=\$APP_NAME ENVIRONMENT=\$ENVIRONMENT; nginx -v"
+APP_NAME=notes-app ENVIRONMENT=development
+nginx version: nginx/1.24.0
+

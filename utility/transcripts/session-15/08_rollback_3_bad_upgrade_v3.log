@@ -1,0 +1,36 @@
+#CWD ~/Downloads/Devops-Assignments-main/session-15-helm/02-helm-rollback
+$ helm upgrade release-demo ./release-demo -n session15 --reuse-values --set release.version=v3 --set release.message="Third release" --set release.color="#c62828" --set probe.path=/healthz --wait --timeout 45s
+level=WARN msg="upgrade failed" name=release-demo error="resource Deployment/session15/release-demo not ready. status: InProgress, message: Updated: 1/3\ncontext deadline exceeded"
+Error: UPGRADE FAILED: resource Deployment/session15/release-demo not ready. status: InProgress, message: Updated: 1/3
+context deadline exceeded
+
+$ helm history release-demo -n session15
+REVISION	UPDATED                 	STATUS    	CHART             	APP VERSION	DESCRIPTION                                                                                                                   
+1       	Wed Oct  7 23:39:33 2026	superseded	release-demo-1.0.0	1.27-alpine	Install complete                                                                                                              
+2       	Wed Oct  7 23:40:09 2026	deployed  	release-demo-1.0.0	1.27-alpine	Upgrade complete                                                                                                              
+3       	Wed Oct  7 23:40:23 2026	failed    	release-demo-1.0.0	1.27-alpine	Upgrade "release-demo" failed: resource Deployment/session15/release-demo not ready. status: InProgress, message: Updated: ...
+
+$ helm status release-demo -n session15 | head -6
+NAME: release-demo
+LAST DEPLOYED: Wed Oct  7 23:40:23 2026
+NAMESPACE: session15
+STATUS: failed
+REVISION: 3
+DESCRIPTION: Upgrade "release-demo" failed: resource Deployment/session15/release-demo not ready. status: InProgress, message: Updated: 1/3
+
+$ kubectl get pods -n session15 -l app.kubernetes.io/instance=release-demo -L app.kubernetes.io/version
+NAME                            READY   STATUS    RESTARTS   AGE   VERSION
+release-demo-56cdbc6dfb-mjwr9   0/1     Running   0          45s   v3
+release-demo-664cdbcb88-7mrl5   1/1     Running   0          53s   v2
+release-demo-664cdbcb88-r2qpc   1/1     Running   0          55s   v2
+release-demo-664cdbcb88-ztnq5   1/1     Running   0          60s   v2
+
+$ kubectl describe pod -n session15 -l app.kubernetes.io/version=v3 | grep -m1 "Readiness probe failed"
+  Warning  Unhealthy  44s (x2 over 44s)  kubelet            spec.containers{web}: Readiness probe failed: Get "http://10.244.0.100:80/healthz": dial tcp 10.244.0.100:80: connect: connection refused
+
+$ for i in 1 2 3 4; do curl -s http://release-demo.localhost:8088 | grep "<h1>"; done
+  <h1>release-demo v2</h1>
+  <h1>release-demo v2</h1>
+  <h1>release-demo v2</h1>
+  <h1>release-demo v2</h1>
+

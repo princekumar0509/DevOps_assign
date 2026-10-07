@@ -1,0 +1,32 @@
+#CWD ~/Downloads/Devops-Assignments-main/session-15-helm/03-mini-project
+$ helm upgrade notes-dev notes-chart -n notes --set image.tag=broken-tag-does-not-exist
+Release "notes-dev" has been upgraded. Happy Helming!
+NAME: notes-dev
+LAST DEPLOYED: Wed Oct  7 23:42:50 2026
+NAMESPACE: notes
+STATUS: deployed
+REVISION: 3
+DESCRIPTION: Upgrade complete
+TEST SUITE: None
+
+$ kubectl get pods -n notes
+NAME                                READY   STATUS             RESTARTS   AGE
+notes-dev-deploy-586c94946f-sffc8   1/1     Running            0          117s
+notes-dev-deploy-6b54788fcb-xrkxg   0/1     ImagePullBackOff   0          20s
+
+$ helm history notes-dev -n notes
+REVISION	UPDATED                 	STATUS    	CHART            	APP VERSION	DESCRIPTION     
+1       	Wed Oct  7 23:41:10 2026	superseded	notes-chart-0.1.0	1.0        	Install complete
+2       	Wed Oct  7 23:41:12 2026	superseded	notes-chart-0.1.0	1.0        	Upgrade complete
+3       	Wed Oct  7 23:42:50 2026	deployed  	notes-chart-0.1.0	1.0        	Upgrade complete
+
+$ helm get values notes-dev -n notes
+USER-SUPPLIED VALUES:
+image:
+  tag: broken-tag-does-not-exist
+
+$ curl -s http://localhost:30090 | grep -E "<h1>|<p>"
+  <h1>notes-app (production)</h1>
+  <p>release notes-dev, revision 2, image nginx:1.25</p>
+  <p>maintained by Prince Kumar</p>
+

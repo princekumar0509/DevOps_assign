@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: payments-svc
+  namespace: session14
+spec:
+  selector:
+    app: payments        # FIX 1: matches the Pod label
+  ports:
+    - port: 80
+      targetPort: 80     # FIX 2: the port the container actually listens on

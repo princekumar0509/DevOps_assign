@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-config
+data:
+  APP_NAME: {{ .Values.app.name | quote }}
+  ENVIRONMENT: {{ .Values.app.environment | quote }}
+  # small landing page so the environment is visible from outside the cluster
+  index.html: |
+    <html><head><title>{{ .Values.app.name }}</title></head>
+    <body>
+      <h1>{{ .Values.app.name }} ({{ .Values.app.environment }})</h1>
+      <p>release {{ .Release.Name }}, revision {{ .Release.Revision }}, image {{ .Values.image.repository }}:{{ .Values.image.tag }}</p>
+      <p>maintained by {{ .Values.app.owner }}</p>
+    </body></html>

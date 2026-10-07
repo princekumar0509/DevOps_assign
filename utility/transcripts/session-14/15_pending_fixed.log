@@ -1,0 +1,45 @@
+#CWD ~/Downloads/Devops-Assignments-main/session-14-kubernetes-troubleshooting/02-common-issues/03-pending
+$ diff <(sed -n "1,20p" broken.yaml) <(sed -n "1,23p" fixed.yaml)
+1,2d0
+< # BUG 1: asks for more CPU/memory than any node has.
+< # BUG 2: requires a node label that no node carries.
+15,17c13,18
+<         requests:
+<           cpu: "64"
+<           memory: 256Gi
+---
+>         requests:              # FIX: right-sized requests
+>           cpu: 100m
+>           memory: 64Mi
+>         limits:
+>           cpu: 500m
+>           memory: 128Mi
+20a22,23
+> metadata:
+>   name: gpu-trainer
+
+$ kubectl delete pod report-generator -n session14 && kubectl apply -f fixed.yaml
+pod "report-generator" deleted from session14 namespace
+pod/report-generator created
+pod/gpu-trainer unchanged
+
+$ kubectl label node devops-lab-control-plane accelerator=nvidia-a100
+node/devops-lab-control-plane labeled
+
+$ kubectl wait --for=condition=Ready pod -l issue=pending -n session14 --timeout=120s
+pod/gpu-trainer condition met
+pod/report-generator condition met
+
+$ kubectl get pods -n session14 -l issue=pending -o wide
+NAME               READY   STATUS    RESTARTS   AGE   IP            NODE                       NOMINATED NODE   READINESS GATES
+gpu-trainer        1/1     Running   0          2s    10.244.0.54   devops-lab-control-plane   <none>           <none>
+report-generator   1/1     Running   0          1s    10.244.0.53   devops-lab-control-plane   <none>           <none>
+
+$ kubectl describe pod gpu-trainer -n session14 | sed -n "/^Events:/,\$p" | grep -E "Type|Scheduling|Scheduled"
+  Type     Reason            Age   From               Message
+  Warning  FailedScheduling  2s    default-scheduler  0/1 nodes are available: 1 node(s) didn't match Pod's node affinity/selector. preemption: 0/1 nodes are available: 1 Preemption is not helpful for scheduling.
+  Normal   Scheduled         1s    default-scheduler  Successfully assigned session14/gpu-trainer to devops-lab-control-plane
+
+$ kubectl label node devops-lab-control-plane accelerator-
+node/devops-lab-control-plane unlabeled
+

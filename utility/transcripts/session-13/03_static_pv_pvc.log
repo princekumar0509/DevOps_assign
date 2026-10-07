@@ -1,0 +1,56 @@
+#CWD ~/Downloads/Devops-Assignments-main/session-13-storage-hpa-probes/01-kubernetes-volumes
+$ kubectl apply -f static-pv.yaml
+persistentvolume/static-pv-1gi created
+
+$ kubectl get pv static-pv-1gi
+NAME            CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS      CLAIM   STORAGECLASS   VOLUMEATTRIBUTESCLASS   REASON   AGE
+static-pv-1gi   1Gi        RWO            Retain           Available           manual         <unset>                          0s
+
+$ kubectl apply -f static-pvc.yaml
+persistentvolumeclaim/static-claim created
+
+$ kubectl get pvc static-claim -n session13
+NAME           STATUS   VOLUME          CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
+static-claim   Bound    static-pv-1gi   1Gi        RWO            manual         <unset>                 0s
+
+$ kubectl get pv static-pv-1gi
+NAME            CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                    STORAGECLASS   VOLUMEATTRIBUTESCLASS   REASON   AGE
+static-pv-1gi   1Gi        RWO            Retain           Bound    session13/static-claim   manual         <unset>                          0s
+
+$ kubectl apply -f pvc-pod.yaml && kubectl wait --for=condition=Ready pod/pvc-demo -n session13 --timeout=120s
+pod/pvc-demo created
+pod/pvc-demo condition met
+
+$ kubectl exec -n session13 pvc-demo -- sh -c "echo \"Prince Kumar - written $(date -u +%T)\" > /data/owner.txt && cat /data/owner.txt"
+Prince Kumar - written 18:01:25
+
+$ kubectl delete pod pvc-demo -n session13
+pod "pvc-demo" deleted from session13 namespace
+
+$ kubectl apply -f pvc-pod.yaml && kubectl wait --for=condition=Ready pod/pvc-demo -n session13 --timeout=120s
+pod/pvc-demo created
+pod/pvc-demo condition met
+
+$ kubectl exec -n session13 pvc-demo -- cat /data/owner.txt
+Prince Kumar - written 18:01:25
+
+$ kubectl describe pvc static-claim -n session13 | grep -E "^(Name|Status|Volume|Capacity|Access Modes|StorageClass|Used By):"
+Name:          static-claim
+StorageClass:  manual
+Status:        Bound
+Volume:        static-pv-1gi
+Capacity:      1Gi
+Access Modes:  RWO
+Used By:       pvc-demo
+
+$ kubectl delete pod pvc-demo -n session13 && kubectl delete pvc static-claim -n session13
+pod "pvc-demo" deleted from session13 namespace
+persistentvolumeclaim "static-claim" deleted from session13 namespace
+
+$ kubectl get pv static-pv-1gi
+NAME            CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS     CLAIM                    STORAGECLASS   VOLUMEATTRIBUTESCLASS   REASON   AGE
+static-pv-1gi   1Gi        RWO            Retain           Released   session13/static-claim   manual         <unset>                          65s
+
+$ docker exec devops-lab-control-plane cat /var/static-pv-1gi/owner.txt
+Prince Kumar - written 18:01:25
+

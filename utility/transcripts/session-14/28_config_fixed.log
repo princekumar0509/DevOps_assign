@@ -1,0 +1,45 @@
+#CWD ~/Downloads/Devops-Assignments-main/session-14-kubernetes-troubleshooting/02-common-issues/08-configuration
+$ diff broken.yaml fixed.yaml | grep -E "^[<>]"
+< # BUG 1: env refers to key LOG_LVL, but the ConfigMap key is LOG_LEVEL.
+< # BUG 2: the Secret db-credentials was never created.
+< apiVersion: v1
+< kind: ConfigMap
+< metadata:
+<   name: billing-config
+<   namespace: session14
+< data:
+<   LOG_LEVEL: info
+<   CURRENCY: INR
+< ---
+<               key: LOG_LVL
+>               key: LOG_LEVEL          # FIX 1: the real key name
+<               name: db-credentials
+>               name: db-credentials    # FIX 2: created with kubectl, not committed to Git
+
+$ kubectl delete pod billing -n session14 && kubectl apply -f fixed.yaml
+pod "billing" deleted from session14 namespace
+pod/billing created
+
+$ kubectl get pod billing -n session14
+NAME      READY   STATUS                       RESTARTS   AGE
+billing   0/1     CreateContainerConfigError   0          8s
+
+$ kubectl describe pod billing -n session14 | sed -n "/^Events:/,\$p" | grep -E "Warning" | tail -1
+  Warning  Failed     8s (x2 over 8s)  kubelet            spec.containers{app}: Error: secret "db-credentials" not found
+
+$ kubectl create secret generic db-credentials -n session14 --from-literal=username=billing_app --from-literal=password="$(openssl rand -base64 18)"
+secret/db-credentials created
+
+$ kubectl wait --for=condition=Ready pod/billing -n session14 --timeout=90s
+pod/billing condition met
+
+$ kubectl get pod billing -n session14
+NAME      READY   STATUS    RESTARTS   AGE
+billing   1/1     Running   0          13s
+
+$ kubectl logs billing -n session14
+log level=info currency=INR db_user=billing_app
+
+$ kubectl get secret db-credentials -n session14 -o jsonpath="{.data.username}" | base64 -d; echo
+billing_app
+

@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: project-broken-pod
+  namespace: challenge
+spec:
+  containers:
+    - name: app
+      image: nginx:1.27          # a tag that exists on Docker Hub

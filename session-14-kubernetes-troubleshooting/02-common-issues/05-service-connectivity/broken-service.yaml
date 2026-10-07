@@ -1,0 +1,13 @@
+# BUG 1: selector says app=payment (singular) - matches no Pod.
+# BUG 2: targetPort 8080, but nginx listens on 80.
+apiVersion: v1
+kind: Service
+metadata:
+  name: payments-svc
+  namespace: session14
+spec:
+  selector:
+    app: payment
+  ports:
+    - port: 80
+      targetPort: 8080

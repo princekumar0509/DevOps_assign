@@ -1,0 +1,35 @@
+# BUG: the app binds to 127.0.0.1, so it only accepts connections from inside
+# its own network namespace - other Pods (and the Service) are refused.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ledger
+  namespace: session14
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ledger
+  template:
+    metadata:
+      labels:
+        app: ledger
+    spec:
+      containers:
+        - name: api
+          image: python:3.12-alpine
+          command: ["python3", "-m", "http.server", "8000", "--bind", "127.0.0.1"]
+          ports:
+            - containerPort: 8000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ledger-svc
+  namespace: session14
+spec:
+  selector:
+    app: ledger
+  ports:
+    - port: 80
+      targetPort: 8000

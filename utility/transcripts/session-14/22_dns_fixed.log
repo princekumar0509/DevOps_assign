@@ -1,0 +1,26 @@
+#CWD ~/Downloads/Devops-Assignments-main/session-14-kubernetes-troubleshooting/02-common-issues/06-dns
+$ cat fixed-frontend-config.yaml | grep INVENTORY_URL
+  INVENTORY_URL: http://inventory-svc.session14.svc.cluster.local
+
+$ kubectl apply -f fixed-frontend-config.yaml
+configmap/frontend-config configured
+
+$ kubectl exec -n storefront frontend -- sh -c "echo \$INVENTORY_URL"
+http://inventory-svc
+
+$ kubectl delete pod frontend -n storefront && kubectl apply -f broken-frontend.yaml -f fixed-frontend-config.yaml
+pod "frontend" deleted from storefront namespace
+namespace/storefront unchanged
+configmap/frontend-config configured
+pod/frontend created
+configmap/frontend-config configured
+
+$ kubectl wait --for=condition=Ready pod/frontend -n storefront --timeout=90s
+pod/frontend condition met
+
+$ kubectl exec -n storefront frontend -- sh -c "echo \$INVENTORY_URL"
+http://inventory-svc.session14.svc.cluster.local
+
+$ kubectl logs frontend -n storefront --tail=3
+18:04:10 inventory OK
+

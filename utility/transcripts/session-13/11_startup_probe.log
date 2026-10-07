@@ -1,0 +1,17 @@
+#CWD ~/Downloads/Devops-Assignments-main/session-13-storage-hpa-probes/03-probes
+$ kubectl apply -f startup.yaml -f startup-too-short.yaml
+pod/startup-demo created
+pod/startup-too-short created
+
+$ timeout 100 kubectl get pods -n session13 -l demo=startup-probe --watch
+NAME                READY   STATUS              RESTARTS   AGE
+startup-demo        0/1     ContainerCreating   0          0s
+startup-too-short   0/1     ContainerCreating   0          0s
+startup-demo        0/1     ContainerCreating   0          0s
+startup-too-short   0/1     ContainerCreating   0          0s
+startup-demo        0/1     Running             0          1s
+startup-too-short   0/1     Running             0          1s
+startup-demo        0/1     Running             0          35s
+startup-demo        1/1     Running             0          35s
+startup-too-short   0/1     Running             1 (0s ago)   45s
+startup-too-short   0/1     Running             2 (0s ago)   90s

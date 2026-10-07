@@ -1,0 +1,13 @@
+#CWD ~/Downloads/Devops-Assignments-main/session-13-storage-hpa-probes/02-hpa
+$ kubectl apply -f load-generator.yaml
+deployment.apps/load-generator created
+
+$ kubectl get pods -n session13 -l app=load-generator
+NAME                             READY   STATUS              RESTARTS   AGE
+load-generator-59866cbfd-2dnmw   0/1     ContainerCreating   0          0s
+load-generator-59866cbfd-c8ccr   0/1     Pending             0          0s
+load-generator-59866cbfd-nklqc   0/1     Pending             0          0s
+
+$ timeout 150 kubectl get hpa hpa-demo -n session13 --watch
+Error from server (NotFound): horizontalpodautoscalers.autoscaling "hpa-demo" not found
+
